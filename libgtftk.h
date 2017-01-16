@@ -14,6 +14,10 @@
 #include <search.h>
 #include <string.h>
 
+#define SEQID "seqid"
+
+const char *COLUMN_NAME[1];
+
 typedef struct GTF_READER {
 	char *filename;
 	int gz;
@@ -67,5 +71,5 @@ typedef struct ROW_LIST {
 GTF_DATA *load_GTF(char *input);
 GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not);
 void print_gtf_data(GTF_DATA *gtf_data);
-void print_row(FILE *output, GTF_ROW *r, char delim);
+
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

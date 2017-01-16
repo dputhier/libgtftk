@@ -11,7 +11,8 @@
 #include "libgtftk.h"
 
 extern int split_ip(char ***tab, char *s, char *delim);
-extern char *trim_ip(char *s);
+extern void split_key_value(char *s, char **key, char **value);
+//extern char *trim_ip(char *s);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int nb_column;
 extern COLUMN **column;
@@ -105,11 +106,14 @@ char *convert_from_char(void *f, void *def) {
 }
 
 void *convert_attributes(char *token, void *def, GTF_ROW *row) {
-	char **attribute, **key_value;
-	int j, na;
+	char **attribute;
+	int j, na, l;
 	ATTRIBUTES *attributes;
 
-	while (*(token + strlen(token) - 1) == ' ') *(token + strlen(token) - 1) = 0;
+	//while (*(token + strlen(token) - 1) == ' ') *(token + strlen(token) - 1) = 0;
+	l = strlen(token);
+	while (*(token + l - 1) == ' ') l--;
+	*(token + l) = 0;
 	na = split_ip(&attribute, token, ";");
 
 	row->nb_attributes = na;
@@ -117,11 +121,12 @@ void *convert_attributes(char *token, void *def, GTF_ROW *row) {
 	attributes->attr = (ATTRIBUTE **)calloc(na, sizeof(ATTRIBUTE *));
 	attributes->nb = na;
 	for (j = 0; j < na; j++) {
-		split_ip(&key_value, attribute[j], "\"");
+		//split_ip(&key_value, attribute[j], "\"");
 		attributes->attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
-		attributes->attr[j]->key = strdup(trim_ip(key_value[0]));
-		attributes->attr[j]->value = strdup(trim_ip(key_value[1]));
-		free(key_value);
+		//attributes->attr[j]->key = strdup(trim_ip(key_value[0]));
+		//attributes->attr[j]->value = strdup(trim_ip(key_value[1]));
+		//free(key_value);
+		split_key_value(attribute[j], &(attributes->attr[j]->key), &(attributes->attr[j]->value));
 	}
 	free(attribute);
 	return attributes;

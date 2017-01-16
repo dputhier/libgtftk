@@ -45,6 +45,21 @@ char *trim_ip(char *s) {
 	return s + b;
 }
 
+void split_key_value(char *s, char **key, char **value) {
+	int k = 0;
+	while (*s == ' ') s++;
+	while (*(s + k) != ' ') k++;
+	*(s + k) = 0;
+	*key = strdup(s);
+	s += k + 1;
+	while (*s != '"') s++;
+	s++;
+	k = 0;
+	while (*(s + k) != '"') k++;
+	*(s + k) = 0;
+	*value = strdup(s);
+}
+
 int compare_row_list(const void *p1, const void *p2) {
 	ROW_LIST *rl1 = ((ROW_LIST *)p1);
 	ROW_LIST *rl2 = ((ROW_LIST *)p2);

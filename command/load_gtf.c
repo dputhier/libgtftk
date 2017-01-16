@@ -52,8 +52,10 @@ GTF_DATA *load_GTF(char *input) {
 			for (l = 0; l < a->nb; l++) {
 				found = 0;
 				for (k = 0; k < column[8]->nb_index; k++)
-					if (!strcmp(a->attr[l]->key, column[8]->index[k]->key))
+					if (!strcmp(a->attr[l]->key, column[8]->index[k]->key)) {
 						found = 1;
+						break;
+					}
 				if (!found) {
 					column[8]->nb_index++;
 					column[8]->index = realloc(column[8]->index, column[8]->nb_index * sizeof(INDEX *));
@@ -62,6 +64,7 @@ GTF_DATA *load_GTF(char *input) {
 					column[8]->make_index(nb_row, row, column[8]);
 				}
 			}
+
 			nb_row++;
 			free(token);
 		}
