@@ -3,6 +3,10 @@
  *
  *  Created on: Jan 10, 2017
  *      Author: fafa
+ *
+ *  Contains the functions for GTF file reading :
+ *  	get_next_gtf_line:	reads a line from input (plain or gzipped GTF file, or standard input)
+ *  	get_gtf_reader:		create an appropriate GTF reader depending on the query
  */
 
 #include "libgtftk.h"

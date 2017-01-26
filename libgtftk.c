@@ -3,14 +3,22 @@
  *
  *  Created on: Apr 1, 2016
  *      Author: fafa
+ *
+ *  The aim of this library is to allow clients written in other languages
+ *  than C to take advantage of the speed of C language to access and
+ *  manipulate data stored in GTF files. Thus, libgtftk is a library that
+ *  provides a set of basic functions to parse, index and extract data from a
+ *  GTF file. Those functions can be called from a client written in any
+ *  language (C, C++, Java, Python ...) provided that a dedicated C interface
+ *  is available (ex : JNI for Java or ctypes for Python). Obviously, C and
+ *  C++ clients doesn't need such an interface. Each GTF related function is
+ *  implemented in a separate source file. So, this file is just here to hold
+ *  common utility functions and most of them are not callable from the shared
+ *  library.
  */
 
 #include "libgtftk.h"
 
-extern int split_ip(char ***tab, char *s, char *delim);
-extern int compare_row_list(const void *p1, const void *p2);
-extern int comprow(const void *m1, const void *m2);
-extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
 extern void print_row(FILE *output, GTF_ROW *r, char delim);
 //extern int extract_data(FILE *output, char *gtf_filename, char *key, COLUMN **column, ROW **data, int nb_row, int nb_column);
 //extern int select_by_genomic_location(FILE *output, char *gtf_filename, char *chr, int start, int end, COLUMN **column, ROW **data, int nb_column);
@@ -25,97 +33,194 @@ extern void print_row(FILE *output, GTF_ROW *r, char delim);
 //extern FILE *open_memstream(char **ptr, size_t *sizeloc);
 //extern FILE *fmemopen(void *buf, size_t size, const char *mode);
 
+/*
+ * This is a pointer on the column model of a GTF file. It is initialized by
+ * the make_columns() function in column.c source file. It is accessed by most
+ * of the functions of the library.
+ */
 COLUMN **column;
+
+/*
+ * The number of columns, that is set to 9 for GTF files in column.c source
+ * file.
+ */
 int nb_column;
 
+/*
+ * A variable used to count the elements in a index with the twalk C function.
+ * Used in action_nb function in this file.
+ */
+int N;
+
+/*
+ * This function splits a character string (s) into a table of words (*tab),
+ * according to a set of delimiters (delim). Each character of delim is a
+ * delimiter. The string is splitted in place and the resulting word table
+ * just contains pointers to the words.
+ * Parameters:
+ * 		tab:	the address of a pointer on a table of string characters
+ * 				the table must NOT be reserved before calling this function
+ * 		s:		the character string to be splitted
+ * 		delim:	the set of charater delimiters
+ *
+ * Return:		the number of words that were found
+ */
+int split_ip(char ***tab, char *s, char *delim) {
+	int i, n, k, in_token, l;
+
+	in_token = n = k = 0;
+	l = strlen(s);
+	for (i = 0; i < l; i++)
+		if (strchr(delim, (int)(*(s + i))) != NULL) {
+			*(s + i) = 0;
+			in_token = 0;
+		}
+		else if (!in_token) {
+			in_token = 1;
+			n++;
+		}
+	*tab = (char **)calloc(n, sizeof(char *));
+	for (i = 0; i < l; i++)
+		if (*(s + i ) != 0) {
+			(*tab)[k++] = s + i;
+			i += strlen(s + i);
+		}
+	return n;
+}
+
+/*
+ * This function trim the extra space characters at the beginning and at the
+ * end of the string s. The trimming is performed in place, so no extra memory
+ * is reserved to store the trimmed string. The returned value is a pointer on
+ * the first non space character of s, or NULL if s contains only space
+ * characters.
+ *
+ * Parameters:
+ * 		s:		the string to be trimmed
+ *
+ * Return:		a pointer on the trimmed string
+ */
+char *trim_ip(char *s) {
+	int b, e, l;
+
+	l = strlen(s);
+	for (b = 0; b < l; b++)
+		if (*(s + b) != ' ')
+			break;
+	for (e = l - 1; e > 0; e--)
+		if (*(s + e) == ' ')
+			*(s + e) = 0;
+		else
+			break;
+	return s + b;
+}
+
+/*
+ * This function split a key/value pair (as specified in the GTF format for
+ * the attributes column) into 2 character strings. value can be delimitted by
+ * double quote characters like in Ensembl format or not. The strings pointed
+ * by key and value are allocated in this function.
+ *
+ * Parameters:
+ * 		s:		the key/value pair from a GTF attribute
+ * 		key:	a pointer to store the address of the key
+ * 		value:	a pointer to store the address of the value
+ */
+void split_key_value(char *s, char **key, char **value) {
+	int k = 0;
+
+	while (*s == ' ') s++;
+	while (*(s + k) != ' ') k++;
+	*(s + k) = 0;
+	*key = strdup(s);
+	s += k + 1;
+	while ((*s == ' ') || (*s == '"')) s++;
+	k = 0;
+	while ((*(s + k) != '"') && (*(s + k) != ' ') && (*(s + k) != 0)) k++;
+	*(s + k) = 0;
+	*value = strdup(s);
+}
+
+/*
+ * This function is used by the C tsearch and tfind functions to search and
+ * add ROW_LIST elements in all the indexes on the columns of a GTF file. For
+ * more information, see the man pages of tsearch.
+ */
+int compare_row_list(const void *p1, const void *p2) {
+	ROW_LIST *rl1 = ((ROW_LIST *)p1);
+	ROW_LIST *rl2 = ((ROW_LIST *)p2);
+	return strcmp(rl1->token, rl2->token);
+}
+
+/*
+ * This function is used by the C qsort function to sort a table of integers
+ * representing rows in a GTF file. As some operations can modify the order of
+ * the rows in the results, this function is used to be sure to output the
+ * rows in the original order.
+ */
+int comprow(const void *m1, const void *m2) {
+	 int *r1 = (int *)m1;
+	 int *r2 = (int *)m2;
+	 return *r1 - *r2;
+}
+
+/*
+ * This function merge two lists of rows (ROW_LIST structures) with suppression
+ * of duplications. The resulting list is not sorted.
+ *
+ * Parameters:
+ * 		scr: 	pointer on the source list
+ * 		dsr:	pointer on the destination list
+ *
+ * Return:		the number of rows in dest list, after merging
+ */
+int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
+	int i;
+	for (i = 0; i < src->nb_row; i++)
+		if (dst == NULL) {
+			dst = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+			dst->row = (int *)calloc(1, sizeof(int));
+			dst->row[dst->nb_row] = src->row[i];
+			dst->nb_row++;
+		}
+		else if (bsearch(&(src->row[i]), dst->row, dst->nb_row, sizeof(int), comprow) == NULL) {
+			dst->row = (int *)realloc(dst->row, (dst->nb_row + 1) * sizeof(int));
+			dst->row[dst->nb_row] = src->row[i];
+			dst->nb_row++;
+		}
+	return dst->nb_row;
+}
+
+/*
+ * This function prints the content of a GTF_DATA on the standard output. It
+ * can be called from the library (default visibility).
+ *
+ * Parameters:
+ * 		gtf_data:	a pointer on the GTF data to be printed
+ */
 __attribute__ ((visibility ("default")))
 void print_gtf_data(GTF_DATA *gtf_data) {
 	int i;
 	for (i = 0; i < gtf_data->size; i++) print_row(stdout, gtf_data->data[i], '\t');
 }
 
-__attribute__ ((visibility ("default")))
-GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
-	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
-	int i, j, k, p, found = 0, n = 0;
-	ROW_LIST *test_row_list = calloc(1, sizeof(ROW_LIST)), *row_list = NULL, **find_row_list = NULL;
-	char **values;
-	int nb_value = split_ip(&values, value, ",");
-
-	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
-	for (i = 0; i < nb_column; i++)
-		if (!strcmp(column[i]->name, key)) {
-			for (p = 0; p < nb_value; p++) {
-				test_row_list->token = values[p];
-				find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[i]->index[0]->data), compare_row_list);
-				if (find_row_list != NULL) add_row_list(*find_row_list, row_list);
-			}
-			qsort(row_list->row, row_list->nb_row, sizeof(int), comprow);
-			if (!not) {
-				ret->size = row_list->nb_row;
-				ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
-				for (j = 0; j < ret->size; j++) ret->data[j] = gtf_data->data[row_list->row[j]];
-			}
-			else {
-				j = 0;
-				ret->size = gtf_data->size - row_list->nb_row;
-				ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
-				for (k = 0; k < gtf_data->size; k++)
-					if (k < row_list->row[j]) {
-						ret->data[n] = gtf_data->data[k];
-						n++;
-					}
-					else if (k == row_list->row[j])
-						j++;
-				if (n != ret->size) {
-					for (k = row_list->row[row_list->nb_row - 1] + 1; k < gtf_data->size; k++) {
-						ret->data[n] = gtf_data->data[k];
-						n++;
-					}
-				}
-			}
-			found = 1;
+/*
+ * This function is intended to be used with the C twalk function. It is used
+ * to evaluate the number of elements in an index. the N variable is declared
+ * at the beginning of this file. For more information about twalk, see the
+ * man pages.
+ */
+static void action_nb(const void *nodep, const VISIT which, const int depth) {
+	switch (which) {
+		case preorder:
 			break;
-		}
-	if (!found)
-		if ((value != NULL) && (column[8]->index != NULL)) {
-			for (p = 0; p < nb_value; p++) {
-				test_row_list->token = values[p];
-				for (i = 0; i < column[8]->nb_index; i++)
-					if (!strcmp(column[8]->index[i]->key, key)) {
-						find_row_list = tfind(test_row_list, &(column[8]->index[i]->data), compare_row_list);
-						break;
-					}
-				if (find_row_list != NULL) add_row_list(*find_row_list, row_list);
-			}
-			if (row_list != NULL) {
-				qsort(row_list->row, row_list->nb_row, sizeof(int), comprow);
-				if (!not) {
-					ret->size = row_list->nb_row;
-					ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
-					for (j = 0; j < row_list->nb_row; j++) ret->data[j] = gtf_data->data[row_list->row[j]];
-				}
-				else {
-					j = 0;
-					ret->size = gtf_data->size - row_list->nb_row;
-					ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
-					for (k = 0; i < gtf_data->size; k++)
-						if (k < row_list->row[j]) {
-							ret->data[n] = gtf_data->data[k];
-							n++;
-						}
-						else if (k == row_list->row[j])
-							j++;
-					if (n != ret->size) {
-						for (k = row_list->row[row_list->nb_row - 1] + 1; k < ret->size; k++) {
-							ret->data[n] = gtf_data->data[k];
-							n++;
-						}
-					}
-				}
-			}
-		}
-	return ret;
+		case postorder:
+		case leaf:
+			N++;
+			break;
+		case endorder:
+			break;
+	}
 }
 
 /*__attribute__ ((visibility ("default")))
