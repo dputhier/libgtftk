@@ -204,6 +204,17 @@ void print_gtf_data(GTF_DATA *gtf_data) {
 	for (i = 0; i < gtf_data->size; i++) print_row(stdout, gtf_data->data[i], '\t');
 }
 
+__attribute__ ((visibility ("default")))
+GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row) {
+	int i;
+	GTF_ROW_CHAR *ret = (GTF_ROW_CHAR *)calloc(1, sizeof(GTF_ROW_CHAR));
+	ret->rank = row->rank;
+	ret->data = (char **)calloc(9, sizeof(char *));
+	for (i = 0; i < 9; i++)
+		ret->data[i] = column[i]->convert_to_string(row->data[i], column[i]->default_value);
+	return ret;
+}
+
 /*
  * This function is intended to be used with the C twalk function. It is used
  * to evaluate the number of elements in an index. the N variable is declared

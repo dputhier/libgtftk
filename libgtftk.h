@@ -70,6 +70,20 @@ typedef struct GTF_ROW {
 } GTF_ROW;
 
 /*
+ * The same structure as ROW_CHAR but with string values. This structure is
+ * used by some client languages (python) that can't handle easily the tables
+ * with mixed pointer types. A convenient function is provided in the library
+ * to translate GTF_ROW into GTF_ROW_CHAR : gtf_row_to_char
+ */
+typedef struct GTF_ROW_CHAR {
+	// a pointer on the 9 string-ed values of a GTF file row
+	char **data;
+
+	// the rank number of the row in the GTF file
+	int rank;
+} GTF_ROW_CHAR;
+
+/*
  * This is the structure that holds data in GTF format. It is also the
  * structure used as input/output for most of the functions of the library. To
  * start using the library, one must call the loadGTF() function with a GTF
@@ -207,5 +221,6 @@ GTF_DATA *load_GTF(char *input);
 GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not);
 void print_gtf_data(GTF_DATA *gtf_data);
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
+GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

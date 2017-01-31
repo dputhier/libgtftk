@@ -1,4 +1,4 @@
-/****
+/*
  * select_by_transcript_size.c
  *
  *  Created on: Jan 12, 2017

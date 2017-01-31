@@ -134,9 +134,8 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 
 	/*
 	 * now it's time to build the GTF_DATA result
-	 * first, we reserve memory for the table of rows
 	 */
-	ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
+	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
 
 
 	if (!not) {
@@ -145,6 +144,11 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * rows in row_list
 		 */
 		ret->size = row_list->nb_row;
+
+		/*
+		 * we reserve memory for the table of rows
+		 */
+		ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
 
 		/*
 		 * each row in row_list is a number used to get the real GTF_ROW in the
@@ -159,6 +163,11 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * total number of rows and the number of rows in row_list
 		 */
 		ret->size = gtf_data->size - row_list->nb_row;
+
+		/*
+		 * we reserve memory for the table of rows
+		 */
+		ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
 
 		/*
 		 * an ugly code to get the "complement" rows in gtf_data
