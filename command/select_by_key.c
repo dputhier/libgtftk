@@ -187,6 +187,8 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 			}
 		}
 	}
+	free(test_row_list);
+	free(row_list);
 	return ret;
 }
 

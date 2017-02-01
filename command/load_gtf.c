@@ -66,6 +66,7 @@ GTF_DATA *load_GTF(char *input) {
 
 	// creates a GTF_READER to read from input
 	GTF_READER *gr = get_gtf_reader(input);
+	if (gr == NULL) return NULL;
 
 	// reserve memory for the GTF_DATA structure to return
 	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));

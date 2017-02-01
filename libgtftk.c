@@ -165,8 +165,8 @@ int comprow(const void *m1, const void *m2) {
 }
 
 /*
- * This function merge two lists of rows (ROW_LIST structures) with suppression
- * of duplications. The resulting list is not sorted.
+ * These functions merge two lists of rows (ROW_LIST structures) with
+ * suppression of duplications. The resulting list is not sorted.
  *
  * Parameters:
  * 		scr: 	pointer on the source list
@@ -174,20 +174,24 @@ int comprow(const void *m1, const void *m2) {
  *
  * Return:		the number of rows in dest list, after merging
  */
+int add_row(int src, ROW_LIST *dst) {
+	if (dst == NULL) {
+		dst = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+		dst->row = (int *)calloc(1, sizeof(int));
+		dst->row[dst->nb_row] = src;
+		dst->nb_row++;
+	}
+	else if (bsearch(&src, dst->row, dst->nb_row, sizeof(int), comprow) == NULL) {
+		dst->row = (int *)realloc(dst->row, (dst->nb_row + 1) * sizeof(int));
+		dst->row[dst->nb_row] = src;
+		dst->nb_row++;
+	}
+	return dst->nb_row;
+}
+
 int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
 	int i;
-	for (i = 0; i < src->nb_row; i++)
-		if (dst == NULL) {
-			dst = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
-			dst->row = (int *)calloc(1, sizeof(int));
-			dst->row[dst->nb_row] = src->row[i];
-			dst->nb_row++;
-		}
-		else if (bsearch(&(src->row[i]), dst->row, dst->nb_row, sizeof(int), comprow) == NULL) {
-			dst->row = (int *)realloc(dst->row, (dst->nb_row + 1) * sizeof(int));
-			dst->row[dst->nb_row] = src->row[i];
-			dst->nb_row++;
-		}
+	for (i = 0; i < src->nb_row; i++) add_row(src->row[i], dst);
 	return dst->nb_row;
 }
 

@@ -4,7 +4,7 @@
  *  Created on: Jan 10, 2017
  *      Author: fafa
  *
- *  Header gile for the gtftk library.
+ *  Header file for the gtftk library.
  *  Contains all the structure definitions and the prototype declarations.
  */
 
@@ -222,5 +222,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not);
 void print_gtf_data(GTF_DATA *gtf_data);
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
 GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row);
+GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
+GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl, int end_gl);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */
