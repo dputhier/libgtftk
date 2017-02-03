@@ -215,6 +215,30 @@ typedef struct ROW_LIST {
 } ROW_LIST;
 
 /*
+ * This is a structure that can hold any tabulated text. It is for example the
+ * result of extract_data function. All functions that return a RAW_DATA
+ * structure are "terminal" functions because this kind of result cannot be the
+ * input of another function.
+ */
+typedef struct RAW_DATA {
+	/*
+	 * The number of rows and columns
+	 */
+	int nb_rows, nb_columns;
+
+	/*
+	 * The name of the columns
+	 */
+	char **column_name;
+
+	/*
+	 * The data (nb_rows x nb_columns character strings)
+	 */
+	char ***data;
+} RAW_DATA;
+
+
+/*
  * Prototypes for the visible functions (callable by external cient)
  */
 GTF_DATA *load_GTF(char *input);
@@ -224,5 +248,6 @@ GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
 GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row);
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl, int end_gl);
+RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

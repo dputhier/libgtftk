@@ -68,6 +68,18 @@ static void action_sbnoe(const void *nodep, const VISIT which, const int depth) 
 	}
 }
 
+/*
+ * select_by_number_of_exon function selects rows in GTF_DATA that correspond
+ * to transcripts that contains a number of exons between the given min and max
+ * values.
+ *
+ * Parameters:
+ * 		gtf_data:	a GTF_DATA structure
+ * 		min:		the minimum number of exons
+ * 		max:		the maximum number of exons
+ *
+ * Returns:			a GTF_DATA structure that contains the result of the query
+ */
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max) {
 	int i;

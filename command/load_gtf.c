@@ -11,7 +11,7 @@
  */
 
 #include "libgtftk.h"
-
+#include <search.h>
 /*
  * external functions declaration
  */
@@ -41,6 +41,12 @@ int add_index(char *key) {
 	column[8]->index[column[8]->nb_index - 1] = (INDEX *)calloc(1, sizeof(INDEX));
 	column[8]->index[column[8]->nb_index - 1]->key = strdup(key);
 	return column[8]->nb_index - 1;
+}
+
+int compatt(const void *s1, const void *s2) {
+	char *cs1 = *(char **)s1;
+	char *cs2 = *(char **)s2;
+	return strcmp(cs1, cs2);
 }
 
 /*
@@ -131,6 +137,25 @@ GTF_DATA *load_GTF(char *input) {
 	return ret;
 }
 
+int get_attribute_list(GTF_DATA *gtf_data) {
+	int i, j, nb_attributes;
+	char **pkey, **attributes;
+	GTF_ROW *row;
+
+	nb_attributes = 0;
+	attributes = NULL;
+	for (j = 0; j < gtf_data->size; j++) {
+		row = gtf_data->data[j];
+		for (i = 0; i < ((ATTRIBUTES *)row->data[8])->nb; i++) {
+			pkey = &((ATTRIBUTES *)row->data[8])->attr[i]->key;
+			if (!lfind(pkey, attributes, (size_t *)(&nb_attributes), sizeof(char *), compatt)) {
+				attributes = (char **)realloc(attributes, (nb_attributes + 1) * sizeof(char *));
+				lsearch(pkey, attributes, (size_t *)(&nb_attributes), sizeof(char *), compatt);
+			}
+		}
+	}
+	return nb_attributes;
+}
 /*
  * Indexes a GTF_DATA with a column name or an attribute name. The return value
  * is the rank of the column for a column name index or the rank of the

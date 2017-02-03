@@ -3,9 +3,17 @@
  *
  *  Created on: Mar 30, 2016
  *      Author: fafa
+ *
+ * This function selects all rows in GTF data with coordinates that intersect
+ * a given genomic location.
  */
 
 #include "libgtftk.h"
+
+/*
+ * global variables declaration
+ */
+extern COLUMN **column;
 
 /*
  * external functions declaration
@@ -14,26 +22,21 @@ extern int index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
 
 /*
- * global variables declaration
+ * select_by_genomic_location function selects rows in GTF_DATA that match with
+ * the given genomic location (chr:start-end).
+ *
+ * Parameters:
+ * 		gtf_data:	a GTF_DATA structure
+ * 		chr:		the chromosome
+ * 		begin_gl:	the start position on chromosome
+ * 		end_gl:		the end position on chromosome
+ *
+ * Returns:			a GTF_DATA structure that contains the result of the query
  */
-extern COLUMN **column;
-extern int nb_column;
-
-int i, start, end;
-ROW_LIST **find_row_list, *row_list, *test_row_list;
-
-COLUMN *get_column_by_name(char *name, COLUMN **column, int nb_column) {
-	int i;
-
-	for (i = 0; i < nb_column; i++)
-		if (!strcmp(column[i]->name, name))
-			return column[i];
-	return NULL;
-}
-
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl, int end_gl) {
-	int i;
+	int i, start, end;
+	ROW_LIST **find_row_list, *row_list, *test_row_list;
 
 	/*
 	 * reserve memory for the GTF_DATA structure to return
@@ -54,12 +57,6 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl
 	find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[0]->index[0]->data), compare_row_list);
 
 	/*
-	 * Get the number of columns start and end (3 and 4 in GTF)
-	 */
-	int start_col = get_column_by_name("start", column, nb_column)->num;
-	int end_col = get_column_by_name("end", column, nb_column)->num;
-
-	/*
 	 * If "chr" was in GTF file
 	 */
 	if (find_row_list != NULL) {
@@ -74,14 +71,15 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl
 		ret->data = NULL;
 		for (i = 0; i < row_list->nb_row; i++) {
 			/*
-			 * For each row, get the start and end values
+			 * For each row, get the start and end values (start and end
+			 * columns are 3rd and 4th columns in GTF format)
 			 */
-			start = *((int *)gtf_data->data[row_list->row[i]]->data[start_col]);
-			end = *((int *)gtf_data->data[row_list->row[i]]->data[end_col]);
+			start = *((int *)gtf_data->data[row_list->row[i]]->data[3]);
+			end = *((int *)gtf_data->data[row_list->row[i]]->data[4]);
 
 			/*
-			 * If start and end values of the row match with the given interval,
-			 * add a GTF_ROW in the results
+			 * If start and end values of the row match with the given
+			 * interval, add a GTF_ROW in the results
 			 */
 			if ((begin_gl >= start && begin_gl <= end) || (end_gl >= start && end_gl <= end) || (begin_gl <= start && end_gl >= end)) {
 				ret->data = (GTF_ROW **)realloc(ret->data, (ret->size + 1) * sizeof(GTF_ROW *));
