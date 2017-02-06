@@ -137,25 +137,25 @@ GTF_DATA *load_GTF(char *input) {
 	return ret;
 }
 
-int get_attribute_list(GTF_DATA *gtf_data) {
-	int i, j, nb_attributes;
-	char **pkey, **attributes;
+STRING_LIST *get_attribute_list(GTF_DATA *gtf_data) {
+	int i, j;
+	STRING_LIST *sl = (STRING_LIST *)calloc(1, sizeof(STRING_LIST));
+	char **pkey;
 	GTF_ROW *row;
 
-	nb_attributes = 0;
-	attributes = NULL;
 	for (j = 0; j < gtf_data->size; j++) {
 		row = gtf_data->data[j];
 		for (i = 0; i < ((ATTRIBUTES *)row->data[8])->nb; i++) {
 			pkey = &((ATTRIBUTES *)row->data[8])->attr[i]->key;
-			if (!lfind(pkey, attributes, (size_t *)(&nb_attributes), sizeof(char *), compatt)) {
-				attributes = (char **)realloc(attributes, (nb_attributes + 1) * sizeof(char *));
-				lsearch(pkey, attributes, (size_t *)(&nb_attributes), sizeof(char *), compatt);
+			if (!lfind(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt)) {
+				sl->list = (char **)realloc(sl->list, (sl->nb + 1) * sizeof(char *));
+				lsearch(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt);
 			}
 		}
 	}
-	return nb_attributes;
+	return sl;
 }
+
 /*
  * Indexes a GTF_DATA with a column name or an attribute name. The return value
  * is the rank of the column for a column name index or the rank of the

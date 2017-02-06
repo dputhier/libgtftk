@@ -237,6 +237,21 @@ typedef struct RAW_DATA {
 	char ***data;
 } RAW_DATA;
 
+/*
+ * This structure is used to store a list of strings. Useful as a function
+ * return type like get_attribute_list in load_gtf.c source file.
+ */
+typedef struct STRING_LIST {
+	/*
+	 * the strings
+	 */
+	char **list;
+
+	/*
+	 * the size of the previous list
+	 */
+	int nb;
+} STRING_LIST;
 
 /*
  * Prototypes for the visible functions (callable by external cient)
@@ -249,5 +264,6 @@ GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row);
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl, int end_gl);
 RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
+void print_raw_data(RAW_DATA *raw_data, char delim);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

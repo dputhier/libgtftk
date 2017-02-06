@@ -165,7 +165,7 @@ int comprow(const void *m1, const void *m2) {
 }
 
 /*
- * These functions merge two lists of rows (ROW_LIST structures) with
+ * These 2 functions merge two lists of rows (ROW_LIST structures) with
  * suppression of duplications. The resulting list is not sorted.
  *
  * Parameters:
@@ -174,6 +174,11 @@ int comprow(const void *m1, const void *m2) {
  *
  * Return:		the number of rows in dest list, after merging
  */
+int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
+	int i;
+	for (i = 0; i < src->nb_row; i++) add_row(src->row[i], dst);
+	return dst->nb_row;
+}
 int add_row(int src, ROW_LIST *dst) {
 	if (dst == NULL) {
 		dst = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
@@ -186,12 +191,6 @@ int add_row(int src, ROW_LIST *dst) {
 		dst->row[dst->nb_row] = src;
 		dst->nb_row++;
 	}
-	return dst->nb_row;
-}
-
-int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
-	int i;
-	for (i = 0; i < src->nb_row; i++) add_row(src->row[i], dst);
 	return dst->nb_row;
 }
 
@@ -208,6 +207,37 @@ void print_gtf_data(GTF_DATA *gtf_data) {
 	for (i = 0; i < gtf_data->size; i++) print_row(stdout, gtf_data->data[i], '\t');
 }
 
+/*
+ * This function prints the content of a RAW_DATA (a table of string elements)
+ * with the given delimiter.
+ *
+ * Parameters:
+ * 		raw_data:	a pointer on the RAW_DATA structure to be printed
+ * 		delim:		a single character delimiter
+ */
+__attribute__ ((visibility ("default")))
+void print_raw_data(RAW_DATA *raw_data, char delim) {
+	int i, k;
+
+	fprintf(stdout, "%s", raw_data->column_name[0]);
+	for (i = 1; i < raw_data->nb_columns; i++) fprintf(stdout, "%c%s", delim, raw_data->column_name[i]);
+	fprintf(stdout, "\n");
+	for (i = 0; i < raw_data->nb_rows; i++) {
+		fprintf(stdout, "%s", raw_data->data[i][0]);
+		for (k = 1; k < raw_data->nb_columns; k++) fprintf(stdout, "%c%s", delim, raw_data->data[i][k]);
+			fprintf(stdout, "\n");
+	}
+}
+
+/*
+ * Transforms a GTF_ROW in a GTF_ROW_CHAR, that is the same data but not typed
+ * (all fields are strings).
+ *
+ * Parameters:
+ * 		row:	the GTF_ROW to be transformed
+ *
+ * Returns:		a pointer on the transformed GTF_ROW_CHAR
+ */
 __attribute__ ((visibility ("default")))
 GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row) {
 	int i;

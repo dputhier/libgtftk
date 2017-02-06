@@ -15,12 +15,13 @@
  * external functions declaration
  */
 extern int split_ip(char ***tab, char *s, char *delim);
-extern int get_attribute_list(FILE *output);
+extern STRING_LIST *get_attribute_list(GTF_DATA *gtf_data);
 
 /*
  * global variables declaration
  */
 extern COLUMN **column;
+extern int nb_column;
 
 int is_in_columns(COLUMN **column, int nb_column, char *key) {
 	int ret = -1, i;
@@ -42,62 +43,43 @@ int is_in_attrs(ATTRIBUTES *attrs, char *key) {
 	return ret;
 }
 
+__attribute__ ((visibility ("default")))
 RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
 	RAW_DATA *ret = (RAW_DATA *)calloc(1, sizeof(RAW_DATA));
-/*	int k, i, n, nb;
-	char **keys;
-	char *line = (char *)calloc(10000, sizeof(char));
-	int nb_keys;
-	char *buffer;
-	size_t size = 0;
-	FILE *out = NULL, *in;
+	int i, k, n;
+	STRING_LIST *attributes;
+	ATTRIBUTES *attrs;
 
 	if (!strcmp(key, "all")) {
-		nb_keys = 8;
-		keys = (char **)malloc(nb_keys * sizeof(char *));
-		n = 0;
-		for (i = 0; i < nb_column; i++)
-			if (column[i]->type != 'A')
-				keys[n++] = column[i]->name;
-		size = 0;
-		out = open_memstream(&buffer, &size);
-		n = get_attribute_list(out);
-		fflush(out);
-		fclose(out);
-		keys = (char **)realloc(keys, (nb_keys + n) * sizeof(char *));
-		in = fmemopen(buffer, size, "r");
-		while (fgets(line, 9999, in) != NULL) {
-			*(strchr(line, (int)':')) = 0;
-			keys[nb_keys++] = strdup(line);
-		}
-		free(buffer);
+		attributes = get_attribute_list(gtf_data);
+		ret->column_name = (char **)malloc((8 + attributes->nb) * sizeof(char *));
+		ret->nb_columns = 0;
+		for (i = 0; i < 8; i++) ret->column_name[ret->nb_columns++] = column[i]->name;
+		for (i = 0; i < attributes->nb; i++) ret->column_name[ret->nb_columns++] = strdup(attributes->list[i]);
+		free(attributes->list);
 	}
 	else
-		nb_keys = split_ip(&keys, key, ",");
+		ret->nb_columns = split_ip(&(ret->column_name), key, ",");
 
-	fprintf(output, "# %s", keys[0]);
-	for (i = 1; i < nb_keys; i++) fprintf(output, "\t%s", keys[i]);
-	fprintf(output, "\n");
-	nb = 1;
-	for (k = 0; k < nb_row; k++) {
-		ATTRIBUTE **attr = ((ATTRIBUTES *)(data[k]->data[8]))->attr;
-		for (i = 0; i < nb_keys - 1; i++) {
-			if ((n = is_in_columns(column, nb_column, keys[i])) != -1)
-				column[n]->print(data[k]->data[n], output, column[n], '\t');
-			else if ((n = is_in_attrs(data[k]->data[8], keys[i])) != -1)
-				fprintf(output, "%s\t", attr[n]->value);
+	ret->data = (char ***)calloc(gtf_data->size, sizeof(char **));
+	ret->nb_rows = gtf_data->size;
+	for (k = 0; k < gtf_data->size; k++) {
+		attrs = (ATTRIBUTES *)(gtf_data->data[k]->data[8]);
+		ret->data[k] = (char **)calloc(ret->nb_columns, sizeof(char *));
+		for (i = 0; i < ret->nb_columns - 1; i++) {
+			if ((n = is_in_columns(column, nb_column, ret->column_name[i])) != -1)
+				ret->data[k][i] = column[n]->convert_to_string(gtf_data->data[k]->data[n], column[n]->default_value);
+			else if ((n = is_in_attrs(attrs, ret->column_name[i])) != -1)
+				ret->data[k][i] = attrs->attr[n]->value;
 			else
-				fprintf(output, ".\t");
+				ret->data[k][i] = strdup(".");
 		}
-		if ((n = is_in_columns(column, nb_column, keys[i])) != -1)
-			column[n]->print(data[k]->data[n], output, column[n], 0);
-		else if ((n = is_in_attrs(data[k]->data[8], keys[i])) != -1)
-			fprintf(output, "%s", attr[n]->value);
+		if ((n = is_in_columns(column, nb_column, ret->column_name[i])) != -1)
+			ret->data[k][i] = column[n]->convert_to_string(gtf_data->data[k]->data[n], column[n]->default_value);
+		else if ((n = is_in_attrs(attrs, ret->column_name[i])) != -1)
+			ret->data[k][i] = attrs->attr[n]->value;
 		else
-			fprintf(output, ".");
-		fprintf(output, "\n");
-		nb++;
+			ret->data[k][i] = strdup(".");
 	}
-	free(keys);*/
 	return ret;
 }
