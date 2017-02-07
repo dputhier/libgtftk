@@ -10,6 +10,7 @@
 
 #ifndef GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_
 #define GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -265,5 +266,6 @@ GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl, int end_gl);
 RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
 void print_raw_data(RAW_DATA *raw_data, char delim);
+GTF_DATA *select_shortest_transcript(GTF_DATA *gtf_data);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

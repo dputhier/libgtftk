@@ -113,6 +113,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		k = i - 8;
 		i = 8;
 	}
+
 	for (p = 0; p < nb_value; p++) {
 		/*
 		 * for each value, we look for it in the kth index of the ith column
@@ -130,14 +131,12 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	 * contains unsorted rows, so we need to sort them in ascending order for
 	 * the output not to be mixed
 	 */
+
 	qsort(row_list->row, row_list->nb_row, sizeof(int), comprow);
 
 	/*
 	 * now it's time to build the GTF_DATA result
 	 */
-	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
-
-
 	if (!not) {
 		/*
 		 * if the query was positive, the size of the result is the number of
@@ -187,6 +186,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 			}
 		}
 	}
+
 	free(test_row_list);
 	free(row_list);
 	return ret;

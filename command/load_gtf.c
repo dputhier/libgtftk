@@ -155,7 +155,9 @@ STRING_LIST *get_attribute_list(GTF_DATA *gtf_data) {
 	}
 	return sl;
 }
+void action_destroy(void *nodep) {
 
+}
 /*
  * Indexes a GTF_DATA with a column name or an attribute name. The return value
  * is the rank of the column for a column name index or the rank of the
@@ -176,6 +178,13 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 	// look for key in the 8 first column names and index the column if found
 	for (i = 0; i < (nb_column - 1); i++)
 		if (!strcmp(column[i]->name, key)) {
+			/*
+			 * if an index on this column exists, we need to destroy it
+			 */
+			if (column[i]->index[0]->data != NULL) {
+				tdestroy(column[i]->index[0]->data, action_destroy);
+				column[i]->index[0]->data = NULL;
+			}
 			for (k = 0; k < gtf_data->size; k++)
 				column[i]->index_row(k, column[i]->convert_to_string(gtf_data->data[k]->data[i], column[i]->default_value), column[i]->index[0]);
 			found = 1;
@@ -188,6 +197,14 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 		for (i = 0; i < column[8]->nb_index; i++)
 			if (!strcmp(column[8]->index[i]->key, key)) {
 				found = 1;
+
+				/*
+				 * if an index on this attribute exists, we need to destroy it
+				 */
+				if (column[8]->index[i]->data != NULL) {
+					tdestroy(column[8]->index[i]->data, action_destroy);
+					column[8]->index[i]->data = NULL;
+				}
 				break;
 			}
 
@@ -207,6 +224,7 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 					column[8]->index_row(k, ((ATTRIBUTES *)gtf_data->data[k]->data[8])->attr[j]->value, column[8]->index[i]);
 					break;
 				}
+
 		// add 8 to rank for an attribute name index
 		i += 8;
 	}
