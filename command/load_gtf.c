@@ -155,9 +155,14 @@ STRING_LIST *get_attribute_list(GTF_DATA *gtf_data) {
 	}
 	return sl;
 }
+
+/*
+ * an empty function used to destroy the indexes when needed (tdestroy)
+ */
 void action_destroy(void *nodep) {
 
 }
+
 /*
  * Indexes a GTF_DATA with a column name or an attribute name. The return value
  * is the rank of the column for a column name index or the rank of the
@@ -180,9 +185,11 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 		if (!strcmp(column[i]->name, key)) {
 			/*
 			 * if an index on this column exists, we need to destroy it
+			 * free is used beacause tdestroy is not implemented on OSX
 			 */
 			if (column[i]->index[0]->data != NULL) {
-				tdestroy(column[i]->index[0]->data, action_destroy);
+				free(column[i]->index[0]->data);
+				//tdestroy(column[i]->index[0]->data, action_destroy);
 				column[i]->index[0]->data = NULL;
 			}
 			for (k = 0; k < gtf_data->size; k++)
@@ -200,9 +207,11 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 
 				/*
 				 * if an index on this attribute exists, we need to destroy it
+				 * free is used beacause tdestroy is not implemented on OSX
 				 */
 				if (column[8]->index[i]->data != NULL) {
-					tdestroy(column[8]->index[i]->data, action_destroy);
+					free(column[8]->index[i]->data);
+					//tdestroy(column[8]->index[i]->data, action_destroy);
 					column[8]->index[i]->data = NULL;
 				}
 				break;
