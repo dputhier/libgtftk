@@ -37,7 +37,7 @@ GTF_DATA *gtf_d;
 int min_ts, max_ts;
 
 /*
- * The comparison function used by twalk.
+ * The function used by twalk on each node of the index tree.
  * This function is used to browse an index on "transcript_id" attribute
  * containing ROW_LIST elements. For each transcript, we make the sum of his
  * exon lengthes and if this sum is between min and max values, the associated

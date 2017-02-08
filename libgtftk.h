@@ -19,6 +19,13 @@
 #include <string.h>
 
 /*
+ * constants for transcript selection in select_transcript function
+ */
+#define SHORTEST_TRANSCRIPT 1
+#define LONGEST_TRANSCRIPT 2
+#define MOST5P_TRANSCRIPT 3
+
+/*
  * This structure describes the input (i.e. a GTF file or a gzipped GTF file).
  * It is created by the get_gtf_reader function in get_reader.c source file.
  * gzFile or plainfile are set depending on the kind of input (gzip or plain).
@@ -203,7 +210,7 @@ typedef struct COLUMN {
  */
 typedef struct ROW_LIST {
 	/* the token that is contained in the rows. For example, this can be "gene"
-	 * or "transcript" for an index on the column feature, or "protein_coding"
+	 * or "transcript" for an index on the column feGTF_DATA *select_transcript(GTF_DATA *gtf_data, int type)ature, or "protein_coding"
 	 * and "lincRNA" for an index on the attribute "gene_biotype".
 	 */
 	char *token;
@@ -263,9 +270,9 @@ void print_gtf_data(GTF_DATA *gtf_data);
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
 GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row);
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
-GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl, int end_gl);
+GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr, int *begin_gl, int *end_gl);
 RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
 void print_raw_data(RAW_DATA *raw_data, char delim);
-GTF_DATA *select_shortest_transcript(GTF_DATA *gtf_data);
+GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

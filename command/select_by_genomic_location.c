@@ -20,6 +20,7 @@ extern COLUMN **column;
  */
 extern int index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
+extern int add_row(int row, ROW_LIST *dst);
 
 /*
  * select_by_genomic_location function selects rows in GTF_DATA that match with
@@ -34,8 +35,8 @@ extern int compare_row_list(const void *p1, const void *p2);
  * Returns:			a GTF_DATA structure that contains the result of the query
  */
 __attribute__ ((visibility ("default")))
-GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl, int end_gl) {
-	int i, start, end;
+GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr, int *begin_gl, int *end_gl) {
+	int i, j, start, end, k;
 	ROW_LIST **find_row_list, *row_list, *test_row_list;
 
 	/*
@@ -49,44 +50,48 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, char *chr, int begin_gl
 	 */
 	i = index_gtf(gtf_data, "seqid");
 
-	/*
-	 * Finds all rows related to chromosome "chr"
-	 */
+	// reserve memory for the final ROW_LIST
+	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+
+	// reserve memory for the ROW_LIST used to search for chromosomes in index
 	test_row_list = calloc(1, sizeof(ROW_LIST));
-	test_row_list->token = chr;
-	find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[0]->index[0]->data), compare_row_list);
 
 	/*
-	 * If "chr" was in GTF file
+	 * Loop on the number of locations
 	 */
-	if (find_row_list != NULL) {
-		/*
-		 * Dereferencing found row list
-		 */
-		row_list = *find_row_list;
+	for (k = 0; k < nb_loc; k++) {
 
 		/*
-		 * now we fill the resulting GTF_DATA with the found rows and return it
+		 * Find all rows related to the given chromosome
 		 */
-		ret->data = NULL;
-		for (i = 0; i < row_list->nb_row; i++) {
-			/*
-			 * For each row, get the start and end values (start and end
-			 * columns are 3rd and 4th columns in GTF format)
-			 */
-			start = *((int *)gtf_data->data[row_list->row[i]]->data[3]);
-			end = *((int *)gtf_data->data[row_list->row[i]]->data[4]);
+		test_row_list->token = chr[k];
+		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[0]->index[0]->data), compare_row_list);
+		if (find_row_list != NULL) {
+			for (j = 0; j < (*find_row_list)->nb_row; j++) {
+				/*
+				 * For each row, get the start and end values (start and end
+				 * columns are 3rd and 4th columns in GTF format)
+				 */
+				start = *((int *)gtf_data->data[(*find_row_list)->row[j]]->data[3]);
+				end = *((int *)gtf_data->data[(*find_row_list)->row[j]]->data[4]);
 
-			/*
-			 * If start and end values of the row match with the given
-			 * interval, add a GTF_ROW in the results
-			 */
-			if ((begin_gl >= start && begin_gl <= end) || (end_gl >= start && end_gl <= end) || (begin_gl <= start && end_gl >= end)) {
-				ret->data = (GTF_ROW **)realloc(ret->data, (ret->size + 1) * sizeof(GTF_ROW *));
-				ret->data[ret->size] = gtf_data->data[row_list->row[i]];
-				ret->size++;
+				/*
+				 * If start and end values of the row match with the given
+				 * interval, add a GTF_ROW in the results
+				 */
+				if ((begin_gl[k] >= start && begin_gl[k] <= end) ||
+						(end_gl[k] >= start && end_gl[k] <= end) ||
+						(begin_gl[k] <= start && end_gl[k] >= end))
+					add_row((*find_row_list)->row[j], row_list);
 			}
 		}
 	}
+
+	/*
+	 * now we fill the resulting GTF_DATA with the found rows and return it
+	 */
+	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
+	for (i = 0; i < row_list->nb_row; i++) ret->data[i] = gtf_data->data[row_list->row[i]];
+	ret->size = row_list->nb_row;
 	return ret;
 }
