@@ -340,7 +340,19 @@ void print_row(FILE *output, GTF_ROW *r, char delim) {
  * 		output:		where to print
  * 		delim:		the delimiter character
  */
-void print_attribute(void *token, char *attr, FILE *output, char delim) {
+/*void print_attribute(void *token, char *attr, FILE *output, char delim) {
+	int k;
+	if (((ATTRIBUTES *)token)->nb > 0) {
+		for (k = 0; k < ((ATTRIBUTES *)token)->nb; k++) {
+			if (!strcmp(attr, ((ATTRIBUTES *)token)->attr[k]->key)) {
+				delim != 0 ? fprintf(output, "%s%c", ((ATTRIBUTES *)token)->attr[k]->value, delim) : fprintf(output, "%s", ((ATTRIBUTES *)token)->attr[k]->value);
+				break;
+			}
+		}
+		if (k == ((ATTRIBUTES *)token)->nb) delim != 0 ? fprintf(output, "NA%c", delim) : fprintf(output, "NA");
+	}
+}*/
+void print_attribute(void *token, char *attr, char *output, char delim) {
 	int k;
 	if (((ATTRIBUTES *)token)->nb > 0) {
 		for (k = 0; k < ((ATTRIBUTES *)token)->nb; k++) {

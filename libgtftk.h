@@ -25,6 +25,24 @@
 #define LONGEST_TRANSCRIPT 2
 #define MOST5P_TRANSCRIPT 3
 
+#define MIN(x, y) (x <= y ? x : y)
+#define MAX(x, y) (x > y ? x : y)
+#define COMPLEMENT(c) (	c == 'A' ? 'T' : \
+						c == 'a' ? 't' : \
+						c == 'T' ? 'A' : \
+						c == 't' ? 'a' : \
+						c == 'G' ? 'C' : \
+						c == 'g' ? 'c' : \
+						c == 'C' ? 'G' : \
+						c == 'c' ? 'g' : c)
+
+#define EXON 0
+#define INTRON 1
+#define UTR3P 2
+#define UTR5P 3
+#define STARTCODON 4
+#define STOPCODON 5
+
 /*
  * This structure describes the input (i.e. a GTF file or a gzipped GTF file).
  * It is created by the get_gtf_reader function in get_reader.c source file.
@@ -262,6 +280,33 @@ typedef struct STRING_LIST {
 } STRING_LIST;
 
 /*
+ *
+ */
+typedef struct SEQFRAG {
+	int start, end;
+	char *seqid, *style, strand;
+	struct SEQFRAG *previous, *next;
+} SEQFRAG ;
+
+typedef struct SEQ_CHUNK {
+	int start, end;
+	int type;
+	struct SEQ_CHUNK *previous, *next;
+} SEQ_CHUNK;
+
+typedef struct SEQUENCE {
+	char *header, *seqid;
+	long fpos;
+	SEQ_CHUNK *chunk;
+} SEQUENCE;
+
+typedef struct SEQUENCES {
+	int nb;
+	char *file_name;
+	SEQUENCE **sequence;
+} SEQUENCES;
+
+/*
  * Prototypes for the visible functions (callable by external cient)
  */
 GTF_DATA *load_GTF(char *input);
@@ -274,5 +319,7 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
 void print_raw_data(RAW_DATA *raw_data, char delim);
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type);
+//int get_fasta(FILE *output, GTF_DATA *gtf_data, char *genome_file, int intron, int rc, int color);
+SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

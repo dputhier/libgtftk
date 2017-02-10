@@ -52,6 +52,8 @@ int nb_column;
  */
 int N;
 
+//int color;
+
 /*
  * This function splits a character string (s) into a table of words (*tab),
  * according to a set of delimiters (delim). Each character of delim is a
@@ -174,11 +176,6 @@ int comprow(const void *m1, const void *m2) {
  *
  * Return:		the number of rows in dest list, after merging
  */
-int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
-	int i;
-	for (i = 0; i < src->nb_row; i++) add_row(src->row[i], dst);
-	return dst->nb_row;
-}
 int add_row(int src, ROW_LIST *dst) {
 	if (dst == NULL) {
 		dst = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
@@ -191,6 +188,12 @@ int add_row(int src, ROW_LIST *dst) {
 		dst->row[dst->nb_row] = src;
 		dst->nb_row++;
 	}
+	return dst->nb_row;
+}
+
+int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
+	int i;
+	for (i = 0; i < src->nb_row; i++) add_row(src->row[i], dst);
 	return dst->nb_row;
 }
 

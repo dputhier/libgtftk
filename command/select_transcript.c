@@ -3,6 +3,15 @@
  *
  *  Created on: Feb 8, 2017
  *      Author: fafa
+ *
+ * The select_transcript function selects the transcripts based on several
+ * criteria:
+ * - the length of the mature transcript (shortest or longest)
+ * - the number of exons
+ * The criteria is specified in the second argument of the function:
+ * - 0 : shortest
+ * - 1 : longest
+ * - 2 : number of exons
  */
 
 #include "libgtftk.h"
