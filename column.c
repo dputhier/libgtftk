@@ -357,11 +357,11 @@ void print_attribute(void *token, char *attr, char *output, char delim) {
 	if (((ATTRIBUTES *)token)->nb > 0) {
 		for (k = 0; k < ((ATTRIBUTES *)token)->nb; k++) {
 			if (!strcmp(attr, ((ATTRIBUTES *)token)->attr[k]->key)) {
-				delim != 0 ? fprintf(output, "%s%c", ((ATTRIBUTES *)token)->attr[k]->value, delim) : fprintf(output, "%s", ((ATTRIBUTES *)token)->attr[k]->value);
+				delim != 0 ? sprintf(output, "%s%c", ((ATTRIBUTES *)token)->attr[k]->value, delim) : sprintf(output, "%s", ((ATTRIBUTES *)token)->attr[k]->value);
 				break;
 			}
 		}
-		if (k == ((ATTRIBUTES *)token)->nb) delim != 0 ? fprintf(output, "NA%c", delim) : fprintf(output, "NA");
+		if (k == ((ATTRIBUTES *)token)->nb) delim != 0 ? sprintf(output, "NA%c", delim) : sprintf(output, "NA");
 	}
 }
 

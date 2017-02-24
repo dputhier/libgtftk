@@ -284,25 +284,27 @@ typedef struct STRING_LIST {
  */
 typedef struct SEQFRAG {
 	int start, end;
-	char *seqid, *style, strand;
-	struct SEQFRAG *previous, *next;
+	char strand;
 } SEQFRAG ;
 
-typedef struct SEQ_CHUNK {
-	int start, end;
-	int type;
-	struct SEQ_CHUNK *previous, *next;
-} SEQ_CHUNK;
+typedef struct FEATURE {
+	char *name;
+	int start, end, tr_start, tr_end;
+} FEATURE;
+
+typedef struct FEATURES {
+	FEATURE **feature;
+	int nb;
+} FEATURES;
 
 typedef struct SEQUENCE {
-	char *header, *seqid;
-	long fpos;
-	SEQ_CHUNK *chunk;
+	char *header, *sequence, strand;
+	int start;
+	FEATURES *features;
 } SEQUENCE;
 
 typedef struct SEQUENCES {
 	int nb;
-	char *file_name;
 	SEQUENCE **sequence;
 } SEQUENCES;
 
@@ -320,6 +322,6 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
 void print_raw_data(RAW_DATA *raw_data, char delim);
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type);
 //int get_fasta(FILE *output, GTF_DATA *gtf_data, char *genome_file, int intron, int rc, int color);
-SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc);
+SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc, char *output);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

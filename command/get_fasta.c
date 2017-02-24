@@ -69,64 +69,12 @@ void get_chunk(char *ret, FILE *fasta_file, long seqpos, int L, int N, int p, ch
 	}
 }
 
-SEQFRAG *insert_seqfrag(SEQFRAG *root, SEQFRAG *src, SEQFRAG *dest) {
-	SEQFRAG *sf;
-
-	//fprintf(stderr, "inserting (%d,%d) in (%d,%d)\n", src->start, src->end, dest->start, dest->end);
-
-	if ((src->start - dest->start) > 0) {	//create seqfrag1
-		//fprintf(stderr, "doing frag1 ...\n");
-		sf = (SEQFRAG *)calloc(1, sizeof(SEQFRAG));
-		sf->seqid = src->seqid;
-		sf->start = dest->start;
-		sf->end = src->start - 1;
-		sf->strand = src->strand;
-		sf->style = strdup(dest->style);
-		sf->next = src;
-		sf->previous = dest->previous;
-		if (dest->previous != NULL) dest->previous->next = sf;
-		src->previous = sf;
-		if (root == dest) root = sf;
-	}
-	else {
-		//fprintf(stderr, "no frag1\n");
-		if (dest->previous != NULL) dest->previous->next = src;
-		src->previous = dest->previous;
-		if (root == dest) root = src;
-	}
-	//fprintf(stderr, "continue ...\n");
-	if ((dest->end - src->end) > 0) {	//create seqfrag3
-		//fprintf(stderr, "doing frag3 ...\n");
-		sf = (SEQFRAG *)calloc(1, sizeof(SEQFRAG));
-		sf->seqid = src->seqid;
-		sf->start = src->end + 1;
-		sf->end = dest->end;
-		sf->strand = src->strand;
-		sf->style = strdup(dest->style);
-		sf->next = dest->next;
-		sf->previous = src;
-		src->next = sf;
-		if (dest->next != NULL) dest->next->previous = sf;
-	}
-	else {
-		//fprintf(stderr, "no frag3\n");
-		src->next = dest->next;
-		if (dest->next != NULL) dest->next->previous = src;
-	}
-	//fprintf(stderr, "finito !\n");
-	return root;
-}
-
 SEQFRAG *make_seqfrag(char *seqid, int start, int end, char strand, char *style, char *color) {
 	SEQFRAG * sf = (SEQFRAG *)calloc(1, sizeof(SEQFRAG));
 
-	sf->seqid = seqid;
 	sf->start = start;
 	sf->end = end;
 	sf->strand = strand;
-	sf->style = (char *)calloc(strlen(style) + strlen(color) + 1, sizeof(char));
-	strcpy(sf->style, style);
-	strcat(sf->style, color);
 
 	return sf;
 }
@@ -145,10 +93,16 @@ static int compare_seqfrag_norc(const void *p1, const void *p2) {
 	return e1->start - e2->start;
 }
 
-static int compare_seqchunk(const void *p1, const void *p2) {
-	SEQ_CHUNK *e1 = (SEQ_CHUNK *)p1;
-	SEQ_CHUNK *e2 = (SEQ_CHUNK *)p2;
+static int compare_feature_p(const void *p1, const void *p2) {
+	FEATURE *e1 = *(FEATURE **)p1;
+	FEATURE *e2 = *(FEATURE **)p2;
 	return e1->start - e2->start;
+}
+
+static int compare_feature_m(const void *p1, const void *p2) {
+	FEATURE *e1 = *(FEATURE **)p1;
+	FEATURE *e2 = *(FEATURE **)p2;
+	return e2->start - e1->start;
 }
 
 /*void print_header(FILE *out, int row, GTF_ROW **data, int intron, int rc) {
@@ -190,7 +144,7 @@ char *make_header(int row, GTF_ROW **data, int intron, int rc) {
 	free(tmp);
 	if (rc && *(char *)(data[row]->data[6]) == '-') strcat(buffer, "_RC");
 	if (!intron) strcat(buffer, "_mRNA");
-	buffer = (char *)realloc(buffer, strlen(buffer) * sizeof(char));
+	buffer = (char *)realloc(buffer, (strlen(buffer) + 1) * sizeof(char));
 	return buffer;
 }
 
@@ -255,238 +209,21 @@ char *get_attribute_value(void *token, char *attr, void *r) {
 	return NULL;
 }
 
-/*__attribute__ ((visibility ("default")))
-int get_fasta(FILE *output, GTF_DATA *gtf_data, char *genome_file, int intron, int rc, int color) {
-	FILE *ff = NULL, *ffi;
-	char **token, *seq = NULL, format[100], *seqid, strand;
-	char *buffer = (char *)calloc(10000, sizeof(char));
-	int i, k, maxLineSize = 0, n, nb_exon = 0, pfasta, tmp, start,end, pcdna, tr_len, nb;
-	int f_toprint, f_i, f_reste, f_min;
-	ENTRY item, *e;
-	ROW_LIST *test_row_list = calloc(1, sizeof(ROW_LIST)), **find_row_list;
-	SEQFRAG *seqfrag = NULL, *sf, *p_sf, *p_tmp;
-	GTF_ROW *row;
-
-	index_gtf(gtf_data, "transcript_id");
-
-	nb = 0;
-	ff = get_fasta_file(genome_file, buffer);
-	//fprintf(stderr, "%s\n", buffer);
-	if (ff != NULL) {
-		ffi = get_fasta_file_index(ff, buffer);
-		hdestroy();fprintf(out, ">");
-	print_attribute(data[row]->data[8], "gene_id", out, '_');
-	print_attribute(data[row]->data[8], "gene_name", out, '_');
-	print_attribute(data[row]->data[8], "transcript_id", out, '_');
-	column[0]->print(data[row]->data[0], out, column[0], ':');
-	column[3]->print(data[row]->data[3], out, column[3], '-');
-	column[4]->print(data[row]->data[4], out, column[4], '_');
-	column[6]->print(data[row]->data[6], out, column[6], 0);
-	if (rc && *(char *)(data[row]->data[6]) == '-') fprintf(out, "_RC");
-	if (!intron) fprintf(out, "_mRNA");
-	fprintf(out, "\n");
-		hcreate(100);
-		while (fgets(buffer, 999, ffi) != NULL) {
-			//fprintf(stderr, "%s\n", buffer);
-			n = split_ip(&token, buffer, " \t\n");
-			if (n > 1) {
-				item.key = strdup(token[0]);
-				item.data = (long *)malloc(sizeof(long));
-				*(long *)item.data = atol(token[n - 1]);
-				hsearch(item, ENTER);
-			}
-			else
-				maxLineSize = atoi(token[0]);
-			free(token);
-		}
-		fclose(ffi);
-		//fprintf(stderr, "COUCOU %d\n", gtf_data->size);
-		for (k = 0; k < gtf_data->size; k++) {
-			//fprintf(stderr, "coucou : %s %d %d\n", data[k]->data[2], (*(int *)(data[k]->data[3])), *(int *)(data[k]->data[4]));
-			row = gtf_data->data[k];
-			if (!strcmp(row->data[2], "transcript") || !strcmp(row->data[2], "ncRNA")) {
-				nb++;
-				print_header(output, k, gtf_data->data, intron, rc);
-				item.key = row->data[0];
-				e = hsearch(item, FIND);
-				if (e != NULL) {
-					tr_len = 0;
-					test_row_list->token = get_attribute_value(row->data[8], "transcript_id", column[8]);
-					//fprintf(stderr, "coucou : %s\n", test_row_list->token);
-					find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[8]->index[0]->data), compare_row_list);
-					if (find_row_list != NULL) {
-						nb_exon = 0;
-						for (i = 0; i < (*find_row_list)->nb_row; i++)
-							if (!strcmp((char *)(gtf_data->data[(*find_row_list)->row[i]]->data[2]), "exon"))
-								nb_exon++;
-						seqfrag = (SEQFRAG *)calloc(nb_exon, sizeof(SEQFRAG));
-						nb_exon = 0;
-						for (i = 0; i < (*find_row_list)->nb_row; i++)
-							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "exon")) {
-								seqfrag[nb_exon].start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]);
-								seqfrag[nb_exon].end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]);
-								seqfrag[nb_exon].seqid = (char *)(gtf_data->data[(*find_row_list)->row[i]]->data[0]);
-								seqfrag[nb_exon].strand = *(char *)(gtf_data->data[(*find_row_list)->row[i]]->data[6]);
-								seqfrag[nb_exon].style = (char *)calloc(strlen(plain) + strlen(black) + 1, sizeof(char));
-								strcpy(seqfrag[nb_exon].style, plain);
-								strcat(seqfrag[nb_exon].style, black);
-								tr_len += seqfrag[nb_exon].end - seqfrag[nb_exon].start + 1;
-								nb_exon++;
-							}
-						qsort(seqfrag, nb_exon, sizeof(SEQFRAG), rc && seqfrag[0].strand == '-' ? compare_seqfrag : compare_seqfrag_norc);
-						if (intron) {
-							tr_len = *(int *)(row->data[4]) - *(int *)(row->data[3]) + 1;
-							seq = (char *)calloc(tr_len + 1, sizeof(char));
-							get_chunk(seq, ff, *(long *)(e->data), maxLineSize, tr_len, *(int *)(row->data[3]), rc ? *(char *)(row->data[6]) : '+');
-						}
-						else {
-							seq = (char *)calloc(tr_len + 1, sizeof(char));
-							pcdna = 0;
-							for (i = 0; i < nb_exon; i++) {
-								get_chunk(seq + pcdna, ff, *(long *)(e->data), maxLineSize, seqfrag[i].end - seqfrag[i].start + 1, seqfrag[i].start, rc ? seqfrag[i].strand : '+');
-								pcdna += seqfrag[i].end - seqfrag[i].start + 1;
-							}
-						}
-					}
-					if (!color)
-						if (output == stdout)
-							for (i = 0; i < tr_len; i += 60)
-								fprintf(output, "%.60s\n", seq + i);
-						else
-							fprintf(output, "%s\n", seq);
-					else {
-						qsort(seqfrag, nb_exon, sizeof(SEQFRAG), compare_seqfrag_norc);
-						for (i = 0; i < nb_exon - 1; i++) {
-							if ((seqfrag[i + 1].start - seqfrag[i].end - 1) > 0 && intron) {
-								sf = make_seqfrag(seqfrag[i].seqid, seqfrag[i].end + 1, seqfrag[i + 1].start - 1, seqfrag[i].strand, plain, gray);
-								seqfrag[i].next = sf;
-								sf->previous = &(seqfrag[i]);
-								sf->next = &(seqfrag[i + 1]);
-								seqfrag[i + 1].previous = sf;
-							}
-							else {
-								seqfrag[i].next = &(seqfrag[i + 1]);
-								seqfrag[i + 1].previous = &(seqfrag[i]);
-							}
-						}
-						int tr_start = seqfrag[0].start;
-						p_sf = seqfrag;
-						while (p_sf != NULL) {
-							p_sf->start -= tr_start;
-							p_sf->end -= tr_start;
-							if (p_sf->strand == '-' && rc) {
-								tmp = p_sf->start;
-								p_sf->start = tr_len - p_sf->end - 1;
-								p_sf->end = tr_len - tmp - 1;
-							}
-							p_sf = p_sf->next;
-						}
-						if (rc && seqfrag[0].strand == '-') {
-							p_sf = seqfrag;
-							while (p_sf->next != NULL) p_sf = p_sf->next;
-							seqfrag = p_sf;
-							while (p_sf != NULL) {
-								p_tmp = p_sf->previous;
-								p_sf->previous = p_sf->next;
-								p_sf->next = p_tmp;
-								p_sf = p_sf->next;
-							}
-						}
-						for (i = 0; i < (*find_row_list)->nb_row; i++) {
-							seqid = (char *)(gtf_data->data[(*find_row_list)->row[i]]->data[0]);
-							start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]) - tr_start;
-							end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]) - tr_start;
-							strand = *(char *)(gtf_data->data[(*find_row_list)->row[i]]->data[6]);
-							if (strand == '-' && rc) {
-								tmp = start;
-								start = tr_len - end - 1;
-								end = tr_len - tmp - 1;
-							}
-							sf = NULL;
-							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "start_codon"))
-								sf = make_seqfrag(seqid, start, end, strand, bold, green);
-							else if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "stop_codon"))
-								sf = make_seqfrag(seqid, start, end, strand, bold, red);
-							else if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "five_prime_utr"))
-								sf = make_seqfrag(seqid, start, end, strand, plain, yellow);
-							else if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "three_prime_utr"))
-								sf = make_seqfrag(seqid, start, end, strand, plain, yellow);
-							if (sf != NULL) {
-								p_sf = seqfrag;
-								while (p_sf != NULL)
-									if ((sf->start >= p_sf->start) && (sf->end <= p_sf->end)) {
-										seqfrag = insert_seqfrag(seqfrag, sf, p_sf);
-										break;
-									}
-									else
-										p_sf = p_sf->next;
-							}
-						}
-						pfasta = 0;
-						p_sf = seqfrag;
-						if (!intron)
-							while (p_sf != NULL) {
-								tmp = p_sf->start;
-								p_sf->start = pfasta;
-								p_sf->end = pfasta + p_sf->end - tmp;
-								pfasta += p_sf->end - p_sf->start + 1;
-								p_sf = p_sf->next;
-							}
-
-						format[0] = '%';
-						format[1] = '.';
-						p_sf = seqfrag;
-						f_reste = 0;
-						while (p_sf != NULL) {
-							f_i = 0;
-							f_toprint = p_sf->end - p_sf->start + 1;
-							fprintf(output, "%s", p_sf->style);
-							if (f_reste > 0) {
-								f_min = MIN(f_reste, f_toprint);
-								sprintf(format + 2, "%d", f_min);
-								strcat(format, "s");
-								fprintf(output, format, seq + p_sf->start);
-								f_reste -= f_min;
-								f_toprint -= f_min;
-								if (f_reste == 0) fprintf(output, "\n");
-								f_i += f_min;
-							}
-							while (f_toprint > 0) {
-								f_min = MIN(60, f_toprint);
-								sprintf(format + 2, "%d", f_min);
-								strcat(format, "s");
-								fprintf(output, format, seq + p_sf->start + f_i);
-								if (f_min == f_toprint) f_reste = 60 - f_toprint;
-								f_toprint -= f_min;
-								if (f_reste == 0) fprintf(output, "\n");
-								f_i += f_min;
-							}
-							p_sf = p_sf->next;
-						}
-						fprintf(output, "\n");
-						if (k != (gtf_data->size - 1)) fprintf(output, "%s%s", plain, black);
-					}
-				}
-				free(seq);
-			}
-		}
-	}
-	return nb;
-}*/
-
 __attribute__ ((visibility ("default")))
-SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc) {
+SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc, char *output) {
 	SEQUENCES *ret = (SEQUENCES *)calloc(1, sizeof(SEQUENCES));
 	SEQUENCE *sequence = NULL;
-	SEQ_CHUNK *pchunk;
+	FEATURE *feat, *new_feat;
 	FILE *ff = NULL, *ffi;
 	char *buffer = (char *)calloc(10000, sizeof(char));
-	int k;
+	int j, k, pb, pe, pf;
 	ENTRY item, *e;
+	SEQFRAG *seqfrag;
 
-	char **token, *seq = NULL, format[100], *seqid, strand;
-	int i, maxLineSize = 0, n, nb_exon = 0, pfasta, tmp, start,end, pcdna, tr_len;
-	int f_toprint, f_i, f_reste, f_min;
+	char **token, *feature;
+	//char format[100], *seqid, strand;
+	int i, n, nb_exon = 0, tr_len, maxLineSize = 0, pcdna;
+	//int f_min, f_reste, f_i, f_toprint, pfasta, tmp, start, end;
 	ROW_LIST *test_row_list = calloc(1, sizeof(ROW_LIST)), **find_row_list;
 	GTF_ROW *row;
 
@@ -500,7 +237,6 @@ SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc) 
 	 */
 	ff = get_fasta_file(genome_file, buffer);
 	if (ff != NULL) {
-		ret->file_name = strdup(buffer);
 		strcat(buffer, ".gtftk");
 
 		/*
@@ -554,9 +290,15 @@ SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc) 
 				sequence->header = make_header(k, gtf_data->data, intron, rc);
 
 				/*
-				 * save the chromosome of the new sequence
+				 * save the strand
 				 */
-				sequence->seqid = row->data[0];
+				sequence->strand = *(char *)(row->data[6]);
+
+				/*
+				 * save the start of the transcript
+				 */
+				sequence->start = *(int *)(row->data[3]);
+				fprintf(stderr, "sequence start = %d\n", sequence->start);
 
 				/*
 				 * Look for chromosome in the hashtable made from genome index
@@ -574,140 +316,141 @@ SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc) 
 					tr_len = 0;
 					if (find_row_list != NULL) {
 						/*
-						 * create the chunks for exons
+						 * find the number of exons of the current transcript
 						 */
 						nb_exon = 0;
-						pchunk = NULL;
 						for (i = 0; i < (*find_row_list)->nb_row; i++)
-							if (!strcmp((char *)(gtf_data->data[(*find_row_list)->row[i]]->data[2]), "exon")) {
-								if (sequence->chunk == NULL)
-									pchunk = sequence->chunk = (SEQ_CHUNK *)calloc(1, sizeof(SEQ_CHUNK));
-								else {
-									pchunk->next = (SEQ_CHUNK *)calloc(1, sizeof(SEQ_CHUNK));
-									pchunk->next->previous = pchunk;
-									pchunk = pchunk->next;
-								}
-								pchunk->start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]);
-								pchunk->end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]);
-								pchunk->type = EXON;
-								tr_len += pchunk->end - pchunk->start + 1;
+							if (!strcmp((char *)(gtf_data->data[(*find_row_list)->row[i]]->data[2]), "exon"))
 								nb_exon++;
-							}
-						//qsort(sequence->chunk, nb_exon, sizeof(SEQ_CHUNK), compare_seqchunk);
 
 						/*
-						 * add chunks for introns ... stay zen
+						 * reserve memory for the table of exons
 						 */
-						pchunk = sequence->chunk;
-						while (pchunk->next != NULL) {
-							pchunk->next->previous = (SEQ_CHUNK *)calloc(1, sizeof(SEQ_CHUNK));
-							pchunk->next->previous->next = pchunk->next;
-							pchunk->next->previous->previous = pchunk;
-							pchunk->next = pchunk->next->previous;
-							pchunk = pchunk->next->next;
-							pchunk->previous->type = INTRON;
-							pchunk->previous->start = pchunk->previous->previous->end + 1;
-							pchunk->previous->end = pchunk->start - 1;;
+						seqfrag = (SEQFRAG *)calloc(nb_exon, sizeof(SEQFRAG));
+
+						/*
+						 * fill the table of exons and compute the transcript
+						 * size (sum of exon sizes)
+						 */
+						nb_exon = 0;
+						for (i = 0; i < (*find_row_list)->nb_row; i++)
+							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "exon")) {
+								seqfrag[nb_exon].start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]);
+								seqfrag[nb_exon].end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]);
+								seqfrag[nb_exon].strand = *(char *)(gtf_data->data[(*find_row_list)->row[i]]->data[6]);
+								tr_len += seqfrag[nb_exon].end - seqfrag[nb_exon].start + 1;
+								nb_exon++;
+							}
+						/*
+						 * sort exons by location on chromosome
+						 */
+						qsort(seqfrag, nb_exon, sizeof(SEQFRAG), rc && seqfrag[0].strand == '-' ? compare_seqfrag : compare_seqfrag_norc);
+
+						/*
+						 * If introns are to be kept in the sequence, the
+						 * sequence length is computed from the start and end
+						 * fields of the "transcript" row. We just have to call
+						 * get_chunk one time to get the sequence from the fasta
+						 * indexed file.
+						 */
+						if (intron) {
+							tr_len = *(int *)(row->data[4]) - *(int *)(row->data[3]) + 1;
+							sequence->sequence = (char *)calloc(tr_len + 1, sizeof(char));
+							get_chunk(sequence->sequence, ff, *(long *)(e->data), maxLineSize, tr_len, *(int *)(row->data[3]), rc ? *(char *)(row->data[6]) : '+');
 						}
 
-						/*int tr_start = seqfrag[0].start;
-						p_sf = seqfrag;
-						while (p_sf != NULL) {
-							p_sf->start -= tr_start;
-							p_sf->end -= tr_start;
-							if (p_sf->strand == '-' && rc) {
-								tmp = p_sf->start;
-								p_sf->start = tr_len - p_sf->end - 1;
-								p_sf->end = tr_len - tmp - 1;
-							}
-							p_sf = p_sf->next;
-						}
-						if (rc && seqfrag[0].strand == '-') {
-							p_sf = seqfrag;
-							while (p_sf->next != NULL) p_sf = p_sf->next;
-							seqfrag = p_sf;
-							while (p_sf != NULL) {
-								p_tmp = p_sf->previous;
-								p_sf->previous = p_sf->next;
-								p_sf->next = p_tmp;
-								p_sf = p_sf->next;
+						/*
+						 * If we want only exons (to get messenger sequence),
+						 * we use the transcript size computed before, we call
+						 * get_chunk for each exon and we concatenate the exons
+						 * by adding pcdna (the actual length of the sequence)
+						 * in the first argument of get_chunk.
+						 */
+						else {
+							sequence->sequence = (char *)calloc(tr_len + 1, sizeof(char));
+							pcdna = 0;
+							for (i = 0; i < nb_exon; i++) {
+								get_chunk(sequence->sequence + pcdna, ff, *(long *)(e->data), maxLineSize, seqfrag[i].end - seqfrag[i].start + 1, seqfrag[i].start, rc ? seqfrag[i].strand : '+');
+								pcdna += seqfrag[i].end - seqfrag[i].start + 1;
 							}
 						}
+
+						/*
+						 * Make the features
+						 */
+						sequence->features = (FEATURES *)calloc(1, sizeof(FEATURES));
+						pf = 0;
 						for (i = 0; i < (*find_row_list)->nb_row; i++) {
-							seqid = (char *)(gtf_data->data[(*find_row_list)->row[i]]->data[0]);
-							start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]) - tr_start;
-							end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]) - tr_start;
-							strand = *(char *)(gtf_data->data[(*find_row_list)->row[i]]->data[6]);
-							if (strand == '-' && rc) {
-								tmp = start;
-								start = tr_len - end - 1;
-								end = tr_len - tmp - 1;
+							feature = gtf_data->data[(*find_row_list)->row[i]]->data[2];
+							if (strcmp(feature, "transcript") && strcmp(feature, "ncRNA")) {
+								sequence->features->feature = (FEATURE **)realloc(sequence->features->feature, (sequence->features->nb + 1) * sizeof(FEATURE *));
+								feat = sequence->features->feature[sequence->features->nb] = (FEATURE *)calloc(1, sizeof(FEATURE));
+								sequence->features->nb++;
+								feat->name = strdup(feature);
+								feat->start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]);
+								feat->end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]);
 							}
-							sf = NULL;
-							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "start_codon"))
-								sf = make_seqfrag(seqid, start, end, strand, bold, green);
-							else if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "stop_codon"))
-								sf = make_seqfrag(seqid, start, end, strand, bold, red);
-							else if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "five_prime_utr"))
-								sf = make_seqfrag(seqid, start, end, strand, plain, yellow);
-							else if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "three_prime_utr"))
-								sf = make_seqfrag(seqid, start, end, strand, plain, yellow);
-							if (sf != NULL) {
-								p_sf = seqfrag;
-								while (p_sf != NULL)
-									if ((sf->start >= p_sf->start) && (sf->end <= p_sf->end)) {
-										seqfrag = insert_seqfrag(seqfrag, sf, p_sf);
-										break;
+						}
+
+						/*
+						 * Add introns in features if needed
+						 */
+						if (intron) {
+							if (sequence->strand == '-') {
+								pb = 0;
+								for (j = 0; j < sequence->features->nb; j++) {
+									feat = sequence->features->feature[j];
+									if (!strcmp(feat->name, "exon")) {
+										if (pb == 0)
+											pb = feat->start;
+										else {
+											fprintf(stderr, "add intron\n");
+											sequence->features->feature = (FEATURE **)realloc(sequence->features->feature, (sequence->features->nb + 1) * sizeof(FEATURE *));
+											new_feat = sequence->features->feature[sequence->features->nb] = (FEATURE *)calloc(1, sizeof(FEATURE));
+											sequence->features->nb++;
+											new_feat->name = strdup("intron");
+											new_feat->start = feat->end + 1;
+											new_feat->end = pb - 1;
+											new_feat->tr_start = new_feat->start - sequence->start;
+											new_feat->tr_end = new_feat->end - sequence->start;
+											pb = feat->start;
+										}
 									}
-									else
-										p_sf = p_sf->next;
+								}
+							}
+							else {
+								pe = 0;
+								for (j = 0; j < sequence->features->nb; j++) {
+									feat = sequence->features->feature[j];
+									if (!strcmp(feat->name, "exon")) {
+										if (pe == 0)
+											pe = feat->end;
+										else {
+											fprintf(stderr, "add intron\n");
+											sequence->features->feature = (FEATURE **)realloc(sequence->features->feature, (sequence->features->nb + 1) * sizeof(FEATURE *));
+											new_feat = sequence->features->feature[sequence->features->nb] = (FEATURE *)calloc(1, sizeof(FEATURE));
+											sequence->features->nb++;
+											new_feat->name = strdup("intron");
+											new_feat->start = pe + 1;
+											new_feat->end = feat->start - 1;
+											new_feat->tr_start = new_feat->start - sequence->start;
+											new_feat->tr_end = new_feat->end - sequence->start;
+											pe = feat->end;
+										}
+									}
+								}
 							}
 						}
-						pfasta = 0;
-						p_sf = seqfrag;
-						if (!intron)
-							while (p_sf != NULL) {
-								tmp = p_sf->start;
-								p_sf->start = pfasta;
-								p_sf->end = pfasta + p_sf->end - tmp;
-								pfasta += p_sf->end - p_sf->start + 1;
-								p_sf = p_sf->next;
-							}
-						format[0] = '%';
-						format[1] = '.';
-						p_sf = seqfrag;
-						f_reste = 0;
-						while (p_sf != NULL) {
-							f_i = 0;
-							f_toprint = p_sf->end - p_sf->start + 1;
-							fprintf(output, "%s", p_sf->style);
-							if (f_reste > 0) {
-								f_min = MIN(f_reste, f_toprint);
-								sprintf(format + 2, "%d", f_min);
-								strcat(format, "s");
-								fprintf(output, format, seq + p_sf->start);
-								f_reste -= f_min;
-								f_toprint -= f_min;
-								if (f_reste == 0) fprintf(output, "\n");
-								f_i += f_min;
-							}
-							while (f_toprint > 0) {
-								f_min = MIN(60, f_toprint);
-								sprintf(format + 2, "%d", f_min);
-								strcat(format, "s");
-								fprintf(output, format, seq + p_sf->start + f_i);
-								if (f_min == f_toprint) f_reste = 60 - f_toprint;
-								f_toprint -= f_min;
-								if (f_reste == 0) fprintf(output, "\n");
-								f_i += f_min;
-							}
-							p_sf = p_sf->next;
+						qsort(sequence->features->feature, sequence->features->nb, sizeof(FEATURE *), sequence->strand == '-' ? compare_feature_m : compare_feature_p);
+						pf = 0;
+						for (j = 0; j < sequence->features->nb; j++) {
+							feat = sequence->features->feature[j];
+							feat->tr_start = pf;
+							feat->tr_end = feat->end - feat->start + pf;
+							pf += feat->end - feat->start + 1;
 						}
-						fprintf(output, "\n");
-						if (k != (gtf_data->size - 1)) fprintf(output, "%s%s", plain, black);*/
 					}
 				}
-				free(seq);
 			}
 		}
 	}
