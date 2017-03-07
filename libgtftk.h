@@ -298,8 +298,8 @@ typedef struct FEATURES {
 } FEATURES;
 
 typedef struct SEQUENCE {
-	char *header, *sequence, strand;
-	int start;
+	char *header, *sequence, strand, *seqid;
+	int start, end;
 	FEATURES *features;
 } SEQUENCE;
 
@@ -321,7 +321,6 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
 void print_raw_data(RAW_DATA *raw_data, char delim);
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type);
-//int get_fasta(FILE *output, GTF_DATA *gtf_data, char *genome_file, int intron, int rc, int color);
-SEQUENCES *get_fasta(GTF_DATA *gtf_data, char *genome_file, int intron, int rc, char *output);
+SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int rc);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */
