@@ -305,9 +305,17 @@ static void action_nb(const void *nodep, const VISIT which, const int depth) {
 }
 
 __attribute__ ((visibility ("default")))
-void *get_memory(long int size) {
-	void *mem = calloc(size, 1);
+char *get_memory(long int size) {
+	int i;
+	char *mem = calloc(size, 1);
+	for (i = 0; i < size; i++) mem[i] = 65;
 	return mem;
+}
+
+__attribute__ ((visibility ("default")))
+int free_mem(char *ptr) {
+	free(ptr);
+	return 0;
 }
 
 /*__attribute__ ((visibility ("default")))
