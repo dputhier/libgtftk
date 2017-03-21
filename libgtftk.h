@@ -69,6 +69,8 @@ typedef struct GTF_READER {
  * a GTF file.
  */
 typedef struct ATTRIBUTE {
+	//char *value;
+	//int key;
 	char *key, *value;
 } ATTRIBUTE;
 
@@ -322,5 +324,7 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key);
 void print_raw_data(RAW_DATA *raw_data, char delim);
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type);
 SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int rc);
+int free_gtf_data(GTF_DATA *gtf_data);
+void *get_memory(int size);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

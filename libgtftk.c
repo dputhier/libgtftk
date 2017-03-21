@@ -52,7 +52,9 @@ int nb_column;
  */
 int N;
 
-//int color;
+//char **attributes;
+//int nb_attributes;
+//struct hsearch_data *attr_hash;
 
 /*
  * This function splits a character string (s) into a table of words (*tab),
@@ -142,6 +144,37 @@ void split_key_value(char *s, char **key, char **value) {
 	*(s + k) = 0;
 	*value = strdup(s);
 }
+
+/*int split_key_value2(char *s, char **value) {
+	int k = 0, i;
+	ENTRY e, *re;
+
+	while (*s == ' ') s++;
+	while (*(s + k) != ' ') k++;
+	*(s + k) = 0;
+	e.key = s;
+	s += k + 1;
+	while ((*s == ' ') || (*s == '"')) s++;
+	k = 0;
+	while ((*(s + k) != '"') && (*(s + k) != ' ') && (*(s + k) != 0)) k++;
+	*(s + k) = 0;
+	*value = strdup(s);
+
+	hsearch_r(e, FIND, &re, attr_hash);
+	if (re == NULL) {
+		e.data = (int *)calloc(1, sizeof(int));
+		*(int *)(e.data) = nb_attributes;
+		attributes = (char **)realloc(attributes, (nb_attributes + 1) * sizeof(char *));
+		attributes[nb_attributes] = strdup(e.key);
+		i = nb_attributes;
+		nb_attributes++;
+		hsearch_r(e, ENTER, &re, attr_hash);
+	}
+	else
+		i = *(int *)(re->data);
+	return i;
+}*/
+
 
 /*
  * This function is used by the C tsearch and tfind functions to search and
@@ -271,40 +304,13 @@ static void action_nb(const void *nodep, const VISIT which, const int depth) {
 	}
 }
 
-/*__attribute__ ((visibility ("default")))
-TAB_RESULT *extract_data_lib(char *gtf_filename, char *key) {
-	char *buffer;
-	int i, n;
-	size_t size = 0;
-	FILE *output = open_memstream(&buffer, &size);
-	TAB_RESULT *ret = (TAB_RESULT *)calloc(1, sizeof(TAB_RESULT));
-
-	column = NULL;
-	data = NULL;
-	nb_column = nb_row = 0;
-	init_ftp_data();
-	init_gtf(gtf_filename, key, &column, &nb_column, &data, &nb_row);
-	n = extract_data(output, gtf_filename, key, column, data, nb_row, nb_column);
-	fflush(output);
-	fclose(output);
-
-	ret->data = (char **)calloc(n, sizeof(char *));
-	FILE *input = fmemopen(buffer, size, "r");
-	char *line = (char *)calloc(10000, sizeof(char));
-	i = 0;
-	while (fgets(line, 9999, input) != NULL) {
-		*(line + strlen(line) - 1) = 0;
-		ret->data[i] = strdup(line);
-		i++;
-	}
-	ret->size = n;
-	fclose(input);
-	free(line);
-	if (buffer != NULL) free(buffer);
-	return ret;
+__attribute__ ((visibility ("default")))
+void *get_memory(int size) {
+	void *mem = calloc(size, 1);
+	return mem;
 }
 
-__attribute__ ((visibility ("default")))
+/*__attribute__ ((visibility ("default")))
 TAB_RESULT *get_feature_list_lib(char *gtf_filename) {
 	char *buffer;
 	size_t size = 0;
@@ -393,97 +399,6 @@ TAB_RESULT *get_seq_list_lib(char *gtf_filename) {
 		if (ptr != NULL) *ptr = '\t';
 	}
 	ret->size = n;
-	if (buffer != NULL) free(buffer);
-	return ret;
-}
-
-__attribute__ ((visibility ("default")))
-GTF_RESULT *select_by_genomic_location_lib(char *gtf_filename, char *chr, int start, int end) {
-	GTF_RESULT *ret = (GTF_RESULT *)calloc(1, sizeof(GTF_RESULT));
-	int i, j, k, k0, n;
-	size_t size = 0;
-	char *buffer = NULL, **token, **attr;
-	char *line = (char *)calloc(10000, sizeof(char));
-	FILE *output = open_memstream(&buffer, &size);
-
-	column = NULL;
-	data = NULL;
-	nb_column = nb_row = 0;
-	init_ftp_data();
-	init_gtf(gtf_filename, "seqid", &column, &nb_column, &data, &nb_row);
-
-	ret->size = select_by_genomic_location(output, gtf_filename, chr, start, end, column, data, nb_column);
-
-	fflush(output);
-	fclose(output);
-	ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
-	i = 0;
-	FILE *input = fmemopen(buffer, size, "r");
-	while (fgets(line, 9999, input) != NULL) {
-		ret->data[i] = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-		ret->data[i]->field = (char **)calloc(8, sizeof(char *));
-		n = split_ip(&token, line, "\t\n");
-		for (j = 0; j < 8; j++) ret->data[i]->field[j] = strdup(token[j]);
-		if (n == 9) {
-			ret->data[i]->attribute = (GTF_ROW_ATTRIBUTES *)calloc(1, sizeof(GTF_ROW_ATTRIBUTES));
-			n = split_ip(&attr, token[8], ";\n");
-			ret->data[i]->attribute->size = n;
-			ret->data[i]->attribute->key = (char **)calloc(n, sizeof(char *));
-			ret->data[i]->attribute->value = (char **)calloc(n, sizeof(char *));
-			for (j = 0; j < n; j++) {
-				k = 0;
-				while (*(attr[j] + k) == ' ') k++;
-				k0 = k;
-				while (*(attr[j] + k) != ' ' && *(attr[j] + k) != '\n') k++;
-				if (*(attr[j] + k) != '\n') {
-					ret->data[i]->attribute->key[j] = strndup(attr[j] + k0, k - k0);
-					if (*(attr[j] + k + 1) == '"') k++;
-					if (*(attr[j] + k + 1 + strlen(attr[j] + k + 1) - 1) == '"') *(attr[j] + k + 1 + strlen(attr[j] + k + 1) - 1) = 0;
-					ret->data[i]->attribute->value[j] = strdup(attr[j] + k + 1);
-				}
-			}
-			free(attr);
-		}
-		free(token);
-		i++;
-	}
-	fclose(input);
-
-	if (buffer != NULL) free(buffer);
-	free(line);
-	return ret;
-}
-
-__attribute__ ((visibility ("default")))
-FASTA_RESULT *get_fasta_lib(char *gtf_filename, char *genome_file, int intron, int rc) {
-	char *buffer = NULL;
-	size_t size = 0;
-	FILE *output = open_memstream(&buffer, &size);
-	FASTA_RESULT *ret = (FASTA_RESULT *)calloc(1, sizeof(FASTA_RESULT));
-
-	column = NULL;
-	data = NULL;
-	nb_column = nb_row = 0;
-	init_ftp_data();
-	init_gtf(gtf_filename, NULL, &column, &nb_column, &data, &nb_row);
-
-	int n = get_fasta(output, gtf_filename, genome_file, intron, rc, column, data, nb_row);
-	fflush(output);
-	fclose(output);
-
-	FILE *input = fmemopen(buffer, size, "r");
-	ret->size = n;
-	ret->data = (FASTA **)calloc(n, sizeof(FASTA *));
-	int i;
-	for (i = 0; i < n; i++) {
-		ret->data[i] = (FASTA *)calloc(1, sizeof(FASTA));
-		size = 0;
-		getline(&(ret->data[i]->header), &size, input);
-		if (*(ret->data[i]->header + strlen(ret->data[i]->header) - 1) == '\n') *(ret->data[i]->header + strlen(ret->data[i]->header) - 1) = 0;
-		getline(&(ret->data[i]->sequence), &size, input);
-		if (*(ret->data[i]->sequence + strlen(ret->data[i]->sequence) - 1) == '\n') *(ret->data[i]->sequence + strlen(ret->data[i]->sequence) - 1) = 0;
-	}
-	fclose(input);
 	if (buffer != NULL) free(buffer);
 	return ret;
 }*/

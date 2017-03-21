@@ -19,6 +19,7 @@ extern GTF_READER *get_gtf_reader(char *query);
 extern void make_columns();
 extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
 extern int split_ip(char ***tab, char *s, char *delim);
+//extern struct hsearch_data *attr_hash;
 
 /*
  * global variables declaration
@@ -85,6 +86,10 @@ GTF_DATA *load_GTF(char *input) {
 	// a counter for the rows
 	nb_row = 0;
 
+	// create a hashtable to store the attributes names
+	//attr_hash = (struct hsearch_data *)calloc(1, sizeof(struct hsearch_data));
+	//hcreate_r(100, attr_hash);
+
 	// loop on the GTF file rows
 	while (get_next_gtf_line(gr, buffer) != NULL) {
 		if (*buffer != '#') {
@@ -100,6 +105,7 @@ GTF_DATA *load_GTF(char *input) {
 
 			// put the new row at the end of the row table
 			ret->data[nb_row] = row;
+			//row = &(ret->data[nb_row]);
 
 			// split the row and check the number of fields (should be 9)
 			if (split_ip(&token, buffer, "\t") != nb_column) {
@@ -133,6 +139,8 @@ GTF_DATA *load_GTF(char *input) {
 
 	// store the final number of rows
 	ret->size = nb_row;
+
+	fprintf(stderr, "reserved memory at %lu\n", ret);
 
 	return ret;
 }

@@ -21,6 +21,7 @@
 extern int split_ip(char ***tab, char *s, char *delim);
 extern void split_key_value(char *s, char **key, char **value);
 extern int compare_row_list(const void *p1, const void *p2);
+//extern char **attributes;
 
 /*
  * global variables declaration
@@ -109,6 +110,7 @@ void *convert_attributes(char *token, void *def) {
 	for (j = 0; j < na; j++) {
 		attributes->attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
 		split_key_value(attribute[j], &(attributes->attr[j]->key), &(attributes->attr[j]->value));
+		//attributes->attr[j]->key = split_key_value2(attribute[j], &(attributes->attr[j]->value));
 	}
 
 	/* free the splitted attributes (they have been duplicated by
@@ -263,8 +265,10 @@ void print_char(void *token, FILE *output, void *col, char delim) {
 void print_attributes(void *token, FILE *output, void *col, char delim) {
 	int k;
 	if (((ATTRIBUTES *)token)->nb > 0) {
+		//fprintf(output, "%s \"%s\";", attributes[((ATTRIBUTES *)token)->attr[0]->key], ((ATTRIBUTES *)token)->attr[0]->value);
 		fprintf(output, "%s \"%s\";", ((ATTRIBUTES *)token)->attr[0]->key, ((ATTRIBUTES *)token)->attr[0]->value);
 		for (k = 1; k < ((ATTRIBUTES *)token)->nb; k++)
+			//fprintf(output, " %s \"%s\";", attributes[((ATTRIBUTES *)token)->attr[k]->key], ((ATTRIBUTES *)token)->attr[k]->value);
 			fprintf(output, " %s \"%s\";", ((ATTRIBUTES *)token)->attr[k]->key, ((ATTRIBUTES *)token)->attr[k]->value);
 	}
 }

@@ -78,7 +78,6 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	 * and get the rank of the concerned index (i)
 	 */
 	i = index_gtf(gtf_data, key);
-
 	// kept just to remind me how to parse a binary tree with twalk !
 	/*for (k = 0; k < column[8]->nb_index; k++) {
 		N = 0;
@@ -131,7 +130,6 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	 * contains unsorted rows, so we need to sort them in ascending order for
 	 * the output not to be mixed
 	 */
-
 	qsort(row_list->row, row_list->nb_row, sizeof(int), comprow);
 
 	/*
@@ -153,7 +151,11 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * each row in row_list is a number used to get the real GTF_ROW in the
 		 * whole GTF data
 		 */
-		for (j = 0; j < ret->size; j++) ret->data[j] = gtf_data->data[row_list->row[j]];
+		for (j = 0; j < ret->size; j++) {
+			ret->data[j] = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+			ret->data[j]->data = gtf_data->data[row_list->row[j]]->data;
+			ret->data[j]->rank = gtf_data->data[row_list->row[j]]->rank;
+		}
 	}
 	else {
 		/*
@@ -172,13 +174,15 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * an ugly code to get the "complement" rows in gtf_data
 		 */
 		j = 0;
-		for (k = 0; k < gtf_data->size; k++)
+		for (k = 0; k < gtf_data->size; k++) {
+			ret->data[n] = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 			if (k < row_list->row[j]) {
 				ret->data[n] = gtf_data->data[k];
 				n++;
 			}
 			else if (k == row_list->row[j])
 				j++;
+		}
 		if (n != ret->size) {
 			for (k = row_list->row[row_list->nb_row - 1] + 1; k < gtf_data->size; k++) {
 				ret->data[n] = gtf_data->data[k];
@@ -187,8 +191,10 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		}
 	}
 
+	free(values);
 	free(test_row_list);
 	free(row_list);
+
 	return ret;
 }
 
