@@ -308,7 +308,7 @@ __attribute__ ((visibility ("default")))
 char *get_memory(long int size) {
 	int i;
 	char *mem = calloc(size, 1);
-	for (i = 0; i < size; i++) mem[i] = 65;
+	for (i = 0; i < size; i++) mem[i] = i & 0xFF;
 	return mem;
 }
 
