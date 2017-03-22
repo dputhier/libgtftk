@@ -145,16 +145,29 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		/*
 		 * we reserve memory for the table of rows
 		 */
-		ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
+		ret->data = (GTF_ROW *)calloc(ret->size, sizeof(GTF_ROW));
 
 		/*
 		 * each row in row_list is a number used to get the real GTF_ROW in the
 		 * whole GTF data
 		 */
 		for (j = 0; j < ret->size; j++) {
-			ret->data[j] = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-			ret->data[j]->data = gtf_data->data[row_list->row[j]]->data;
-			ret->data[j]->rank = gtf_data->data[row_list->row[j]]->rank;
+			ret->data[j].rank = gtf_data->data[row_list->row[j]].rank;
+			ret->data[j].nb_attributes = gtf_data->data[row_list->row[j]].nb_attributes;
+
+			ret->data[j].field = (char **)calloc(8, sizeof(char*));
+			for (i = 0; i < 8; i++) ret->data[j].field[i] = strdup(gtf_data->data[row_list->row[j]].field[i]);
+			//ret->data[j].field = gtf_data->data[row_list->row[j]].field;
+
+			ret->data[j].value = (char **)calloc(gtf_data->data[row_list->row[j]].nb_attributes, sizeof(char*));
+			for (i = 0; i < gtf_data->data[row_list->row[j]].nb_attributes; i++)
+				ret->data[j].value[i] = strdup(gtf_data->data[row_list->row[j]].value[i]);
+			//ret->data[j].value = gtf_data->data[row_list->row[j]].value;
+
+			ret->data[j].key = (char **)calloc(gtf_data->data[row_list->row[j]].nb_attributes, sizeof(char*));
+			for (i = 0; i < gtf_data->data[row_list->row[j]].nb_attributes; i++)
+				ret->data[j].key[i] = strdup(gtf_data->data[row_list->row[j]].key[i]);
+			//ret->data[j].key = gtf_data->data[row_list->row[j]].key;
 		}
 	}
 	else {
@@ -168,16 +181,19 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		/*
 		 * we reserve memory for the table of rows
 		 */
-		ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
+		ret->data = (GTF_ROW *)calloc(ret->size, sizeof(GTF_ROW));
 
 		/*
 		 * an ugly code to get the "complement" rows in gtf_data
 		 */
 		j = 0;
 		for (k = 0; k < gtf_data->size; k++) {
-			ret->data[n] = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 			if (k < row_list->row[j]) {
-				ret->data[n] = gtf_data->data[k];
+				ret->data[n].field = gtf_data->data[k].field;
+				ret->data[n].key = gtf_data->data[k].key;
+				ret->data[n].value = gtf_data->data[k].value;
+				ret->data[n].nb_attributes = gtf_data->data[k].nb_attributes;
+				ret->data[n].rank = gtf_data->data[k].rank;
 				n++;
 			}
 			else if (k == row_list->row[j])
@@ -185,7 +201,11 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		}
 		if (n != ret->size) {
 			for (k = row_list->row[row_list->nb_row - 1] + 1; k < gtf_data->size; k++) {
-				ret->data[n] = gtf_data->data[k];
+				ret->data[n].field = gtf_data->data[k].field;
+				ret->data[n].key = gtf_data->data[k].key;
+				ret->data[n].value = gtf_data->data[k].value;
+				ret->data[n].nb_attributes = gtf_data->data[k].nb_attributes;
+				ret->data[n].rank = gtf_data->data[k].rank;
 				n++;
 			}
 		}

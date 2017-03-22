@@ -72,8 +72,8 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 				 * For each row, get the start and end values (start and end
 				 * columns are 3rd and 4th columns in GTF format)
 				 */
-				start = *((int *)gtf_data->data[(*find_row_list)->row[j]]->data[3]);
-				end = *((int *)gtf_data->data[(*find_row_list)->row[j]]->data[4]);
+				start = *((int *)gtf_data->data[(*find_row_list)->row[j]].field[3]);
+				end = *((int *)gtf_data->data[(*find_row_list)->row[j]].field[4]);
 
 				/*
 				 * If start and end values of the row match with the given
@@ -90,8 +90,14 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
-	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
-	for (i = 0; i < row_list->nb_row; i++) ret->data[i] = gtf_data->data[row_list->row[i]];
+	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
+	for (i = 0; i < row_list->nb_row; i++) {
+		ret->data[i].key = gtf_data->data[row_list->row[i]].key;
+		ret->data[i].value = gtf_data->data[row_list->row[i]].value;
+		ret->data[i].field = gtf_data->data[row_list->row[i]].field;
+		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
+		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
+	}
 	ret->size = row_list->nb_row;
 	return ret;
 }

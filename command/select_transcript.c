@@ -90,9 +90,6 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 	// loop variables
 	int i, j, k;
 
-	// the attributes of each transcript
-	ATTRIBUTES *attrs;
-
 	// the row list of the current gene
 	ROW_LIST *datap = *((ROW_LIST **)nodep);
 
@@ -119,10 +116,10 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 			for (i = 0; i < datap->nb_row; i++) {
 
 				// the current row
-				row = gtf_d->data[datap->row[i]];
+				row = &gtf_d->data[datap->row[i]];
 
 				// the current feature value
-				feature = (char *)(row->data[2]);
+				feature = row->field[2];
 				if (!strcmp(feature, "gene")) {
 					/*
 					 * if we parse a "gene" row, we have to keep in mind the
@@ -130,7 +127,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 					 */
 					r = datap->row[i];
 
-					if (*(char *)(row->data[6]) == '+')	most_5p = 300000000;
+					if (*(row->field[6]) == '+') most_5p = 300000000;
 
 				}
 				else if (!strcmp(feature, "transcript")) {
@@ -140,21 +137,16 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 					 */
 
 					/*
-					 * the attributes of the transcript
-					 */
-					attrs = (ATTRIBUTES *)(row->data[8]);
-
-					/*
 					 * loop on the attributes of the current transcript, just to
 					 * find the transcript_id value
 					 */
-					for (j = 0; j < attrs->nb; j++) {
-						if (!strcmp(attrs->attr[j]->key, "transcript_id")) {
+					for (j = 0; j < row->nb_attributes; j++) {
+						if (!strcmp(row->key[j], "transcript_id")) {
 							/*
 							 * once we know the transcript_id value, we use it
 							 * to get all the rows related to it
 							 */
-							row_list->token = attrs->attr[j]->value;
+							row_list->token = row->value[j];
 							find_row_list = (ROW_LIST **)tfind(row_list, &(column[8]->index[1]->data), compare_row_list);
 							if (find_row_list != NULL) {
 								trsize = 0;
@@ -164,9 +156,9 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 								 * to compute his length
 								 */
 								for (k = 0; k < (*find_row_list)->nb_row; k++) {
-									if (!strcmp(gtf_d->data[(*find_row_list)->row[k]]->data[2], "exon")) {
-										start = *(int *)(gtf_d->data[(*find_row_list)->row[k]]->data[3]);
-										end = *(int *)(gtf_d->data[(*find_row_list)->row[k]]->data[4]);
+									if (!strcmp(gtf_d->data[(*find_row_list)->row[k]].field[2], "exon")) {
+										start = atoi(gtf_d->data[(*find_row_list)->row[k]].field[3]);
+										end = atoi(gtf_d->data[(*find_row_list)->row[k]].field[4]);
 										trsize += (end - start + 1);
 									}
 								}
@@ -200,9 +192,9 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 							 * the rank of the first row (most_5p_i)
 							 * the rank of the transcript_id attribute (most_5p_j)
 							 */
-							start = *(int *)row->data[3];
-							end = *(int *)row->data[4];
-							if (*(char *)(row->data[6]) == '+') {
+							start = atoi(row->field[3]);
+							end = atoi(row->field[4]);
+							if (*(row->field[6]) == '+') {
 								if (most_5p > start) {
 									most_5p = start;
 									most_5p_i = i;
@@ -235,36 +227,21 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 
 			if (tr_type == SHORTEST_TRANSCRIPT) {
 				/*
-				 * attributes of the shortest transcript
-				 */
-				attrs = (ATTRIBUTES *)(gtf_d->data[datap->row[min_i]]->data[8]);
-
-				/*
 				 * we look for the shortest transcript
 				 */
-				test_row_list->token = attrs->attr[min_j]->value;
+				test_row_list->token = gtf_d->data[datap->row[min_i]].value[min_j];
 			}
 			else if (tr_type == LONGEST_TRANSCRIPT) {
 				/*
-				 * attributes of the longest transcript
-				 */
-				attrs = (ATTRIBUTES *)(gtf_d->data[datap->row[max_i]]->data[8]);
-
-				/*
 				 * we look for the longest transcript
 				 */
-				test_row_list->token = attrs->attr[max_j]->value;
+				test_row_list->token = gtf_d->data[datap->row[max_i]].value[max_j];
 			}
 			else if (tr_type == MOST5P_TRANSCRIPT) {
 				/*
-				 * attributes of the most 5' transcript
-				 */
-				attrs = (ATTRIBUTES *)(gtf_d->data[datap->row[most_5p_i]]->data[8]);
-
-				/*
 				 * we look for the longest transcript
 				 */
-				test_row_list->token = attrs->attr[most_5p_j]->value;
+				test_row_list->token = gtf_d->data[datap->row[most_5p_i]].value[most_5p_j];
 			}
 			/*
 			 * get transcript rows
@@ -330,8 +307,14 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
-	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
-	for (i = 0; i < row_list->nb_row; i++) ret->data[i] = gtf_data->data[row_list->row[i]];
+	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
+	for (i = 0; i < row_list->nb_row; i++) {
+		ret->data[i].key = gtf_data->data[row_list->row[i]].key;
+		ret->data[i].value = gtf_data->data[row_list->row[i]].value;
+		ret->data[i].field = gtf_data->data[row_list->row[i]].field;
+		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
+		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
+	}
 	ret->size = row_list->nb_row;
 	return ret;
 }

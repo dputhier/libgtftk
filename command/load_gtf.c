@@ -19,6 +19,8 @@ extern GTF_READER *get_gtf_reader(char *query);
 extern void make_columns();
 extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
 extern int split_ip(char ***tab, char *s, char *delim);
+extern void split_key_value(char *s, char **key, char **value);
+
 //extern struct hsearch_data *attr_hash;
 
 /*
@@ -67,7 +69,7 @@ GTF_DATA *load_GTF(char *input) {
 	char *buffer = (char *)calloc(10000, sizeof(char));
 
 	// a string table to split GTF rows into fields
-	char **token;
+	char **token, **attr;
 
 	int i, nb_row;
 
@@ -96,16 +98,13 @@ GTF_DATA *load_GTF(char *input) {
 			*(buffer + strlen(buffer) - 1) = 0;
 
 			// reserve memory for a new row in the row table
-			ret->data = (GTF_ROW **)realloc(ret->data, (nb_row + 1) * sizeof(GTF_ROW *));
+			ret->data = (GTF_ROW *)realloc(ret->data, (nb_row + 1) * sizeof(GTF_ROW));
 
-			/* reserve memory for the new row; this row variable is used to
+			/*
+			 * reserve memory for the new row; this row variable is used to
 			 * improve readability of the code
 			 */
-			row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-
-			// put the new row at the end of the row table
-			ret->data[nb_row] = row;
-			//row = &(ret->data[nb_row]);
+			row = ret->data + nb_row;
 
 			// split the row and check the number of fields (should be 9)
 			if (split_ip(&token, buffer, "\t") != nb_column) {
@@ -116,12 +115,22 @@ GTF_DATA *load_GTF(char *input) {
 				exit(0);
 			}
 
-			// reserve memory for the 9 fields
-			row->data = (void *)calloc(nb_column, sizeof(void *));
+			// reserve memory for the 8 first fields
+			row->field = (char **)calloc(8, sizeof(char *));
 
-			// store the 9 fields after conversion in their appropriate type
-			for (i = 0; i < nb_column; i++)
-				row->data[i] = column[i]->convert(token[i], column[i]->default_value);
+			// store the 8 first fields
+			for (i = 0; i < 8; i++) row->field[i] = strdup(token[i]);
+
+			// split the attributes
+			row->nb_attributes = split_ip(&attr, token[8], ";");
+
+			// reserve memory for the attributes
+			row->key = (char **)calloc(row->nb_attributes, sizeof(char *));
+			row->value = (char **)calloc(row->nb_attributes, sizeof(char *));
+
+			// store the attributes
+			for (i = 0; i < row->nb_attributes; i++)
+				split_key_value(attr[i], &row->key[i], &row->value[i]);
 
 			// keep the rank number of the row
 			row->rank = nb_row;
@@ -129,8 +138,9 @@ GTF_DATA *load_GTF(char *input) {
 			// one more row has been read
 			nb_row++;
 
-			// free memory used to split the row
+			// free memory used to split the row and the attributes
 			free(token);
+			free(attr);
 		}
 	}
 
@@ -139,8 +149,6 @@ GTF_DATA *load_GTF(char *input) {
 
 	// store the final number of rows
 	ret->size = nb_row;
-
-	fprintf(stderr, "reserved memory at %lu\n", ret);
 
 	return ret;
 }
@@ -152,9 +160,9 @@ STRING_LIST *get_attribute_list(GTF_DATA *gtf_data) {
 	GTF_ROW *row;
 
 	for (j = 0; j < gtf_data->size; j++) {
-		row = gtf_data->data[j];
-		for (i = 0; i < ((ATTRIBUTES *)row->data[8])->nb; i++) {
-			pkey = &((ATTRIBUTES *)row->data[8])->attr[i]->key;
+		row = &gtf_data->data[j];
+		for (i = 0; i < row->nb_attributes; i++) {
+			pkey = &row->key[i];
 			if (!lfind(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt)) {
 				sl->list = (char **)realloc(sl->list, (sl->nb + 1) * sizeof(char *));
 				lsearch(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt);
@@ -201,7 +209,7 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 				column[i]->index[0]->data = NULL;
 			}
 			for (k = 0; k < gtf_data->size; k++)
-				column[i]->index_row(k, column[i]->convert_to_string(gtf_data->data[k]->data[i], column[i]->default_value), column[i]->index[0]);
+				column[i]->index_row(k, column[i]->convert_to_string(gtf_data->data[k].field[i], column[i]->default_value), column[i]->index[0]);
 			found = 1;
 			break;
 		}
@@ -236,9 +244,9 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 		 * row in the attribute key index
 		 */
 		for (k = 0; k < gtf_data->size; k++)
-			for (j = 0; j < ((ATTRIBUTES *)gtf_data->data[k]->data[8])->nb; j++)
-				if (!strcmp(key, ((ATTRIBUTES *)gtf_data->data[k]->data[8])->attr[j]->key)) {
-					column[8]->index_row(k, ((ATTRIBUTES *)gtf_data->data[k]->data[8])->attr[j]->value, column[8]->index[i]);
+			for (j = 0; j < gtf_data->data[k].nb_attributes; j++)
+				if (!strcmp(key, gtf_data->data[k].key[j])) {
+					column[8]->index_row(k, gtf_data->data[k].value[j], column[8]->index[i]);
 					break;
 				}
 

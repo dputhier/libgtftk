@@ -240,7 +240,7 @@ int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
 __attribute__ ((visibility ("default")))
 void print_gtf_data(GTF_DATA *gtf_data) {
 	int i;
-	for (i = 0; i < gtf_data->size; i++) print_row(stdout, gtf_data->data[i], '\t');
+	for (i = 0; i < gtf_data->size; i++) print_row(stdout, &gtf_data->data[i], '\t');
 }
 
 /*
@@ -280,8 +280,8 @@ GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row) {
 	GTF_ROW_CHAR *ret = (GTF_ROW_CHAR *)calloc(1, sizeof(GTF_ROW_CHAR));
 	ret->rank = row->rank;
 	ret->data = (char **)calloc(9, sizeof(char *));
-	for (i = 0; i < 9; i++)
-		ret->data[i] = column[i]->convert_to_string(row->data[i], column[i]->default_value);
+	for (i = 0; i < 8; i++) ret->data[i] = row->field[i];
+
 	return ret;
 }
 
@@ -302,6 +302,25 @@ static void action_nb(const void *nodep, const VISIT which, const int depth) {
 		case endorder:
 			break;
 	}
+}
+
+/*
+ * Look for an attribute in a row.
+ *
+ * Parameters:
+ * 		row:	the row to look in
+ * 		at:		the attribute name to look for
+ *
+ * Returns:		the rank of the found attribute (or -1 if not found)
+ */
+int is_in_attrs(GTF_ROW *row, char *at) {
+	int ret = -1, i;
+	for (i = 0; i < row->nb_attributes; i++)
+		if (!strcmp(row->key[i], at)) {
+			ret = i;
+			break;
+		}
+	return ret;
 }
 
 __attribute__ ((visibility ("default")))

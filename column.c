@@ -18,9 +18,9 @@
 /*
  * external functions declaration
  */
-extern int split_ip(char ***tab, char *s, char *delim);
-extern void split_key_value(char *s, char **key, char **value);
 extern int compare_row_list(const void *p1, const void *p2);
+extern int is_in_attrs(GTF_ROW *row, char *at);
+
 //extern char **attributes;
 
 /*
@@ -87,7 +87,7 @@ void *convert_char(char *token, void *def) {
 
 // String to ATTRIBUTES conversion
 void *convert_attributes(char *token, void *def) {
-	char **attribute;
+/*	char **attribute;
 	int j, na, l;
 	ATTRIBUTES *attributes;
 
@@ -102,22 +102,23 @@ void *convert_attributes(char *token, void *def) {
 	// reserve and initialize the ATTRIBUTES structure
 	attributes = (ATTRIBUTES *)calloc(1, sizeof(ATTRIBUTES));
 	attributes->attr = (ATTRIBUTE **)calloc(na, sizeof(ATTRIBUTE *));
-	attributes->nb = na;
+	attributes->nb = na;*/
 
 	/* For each attribute, reserve the ATTRIBUTE structure and call the
 	 * split_key_value function to fill it
 	 */
-	for (j = 0; j < na; j++) {
+	/*for (j = 0; j < na; j++) {
 		attributes->attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
 		split_key_value(attribute[j], &(attributes->attr[j]->key), &(attributes->attr[j]->value));
 		//attributes->attr[j]->key = split_key_value2(attribute[j], &(attributes->attr[j]->value));
-	}
+	}*/
 
 	/* free the splitted attributes (they have been duplicated by
 	 * split_key_value function) and return
 	 */
-	free(attribute);
-	return attributes;
+	/*free(attribute);
+	return attributes;*/
+	return NULL;
 }
 
 /*
@@ -190,15 +191,16 @@ char *convert_from_char(void *c, void *def) {
  * double quote characters are added around value, even if they were not
  * present in the GTF file
  */
-char *convert_from_attributes(void *attributes, void *def) {
+char *convert_from_attributes(void *token, void *def) {
 	char *ret = (char *)calloc(1000, sizeof(char));
 	int j, na;
 
-	na = ((ATTRIBUTES *)attributes)->nb;
+	GTF_ROW *row = (GTF_ROW *)token;
+	na = row->nb_attributes;
 	for (j = 0; j < na; j++) {
-		strcat(ret, ((ATTRIBUTES *)attributes)->attr[j]->key);
+		strcat(ret, row->key[j]);
 		strcat(ret, " \"");
-		strcat(ret, ((ATTRIBUTES *)attributes)->attr[j]->value);
+		strcat(ret, row->value[j]);
 		strcat(ret, "\"; ");
 	}
 	*(ret + strlen(ret) - 1) = 0;
@@ -264,12 +266,11 @@ void print_char(void *token, FILE *output, void *col, char delim) {
 // print for attributes column
 void print_attributes(void *token, FILE *output, void *col, char delim) {
 	int k;
-	if (((ATTRIBUTES *)token)->nb > 0) {
-		//fprintf(output, "%s \"%s\";", attributes[((ATTRIBUTES *)token)->attr[0]->key], ((ATTRIBUTES *)token)->attr[0]->value);
-		fprintf(output, "%s \"%s\";", ((ATTRIBUTES *)token)->attr[0]->key, ((ATTRIBUTES *)token)->attr[0]->value);
-		for (k = 1; k < ((ATTRIBUTES *)token)->nb; k++)
-			//fprintf(output, " %s \"%s\";", attributes[((ATTRIBUTES *)token)->attr[k]->key], ((ATTRIBUTES *)token)->attr[k]->value);
-			fprintf(output, " %s \"%s\";", ((ATTRIBUTES *)token)->attr[k]->key, ((ATTRIBUTES *)token)->attr[k]->value);
+	GTF_ROW *row = (GTF_ROW *)token;
+	if (row->nb_attributes != -1) {
+		fprintf(output, "%s \"%s\";", row->key[0], row->value[0]);
+		for (k = 1; k < row->nb_attributes; k++)
+			fprintf(output, " %s \"%s\";", row->key[k], row->value[k]);
 	}
 }
 
@@ -327,46 +328,29 @@ void index_row(int row_nb, char *value, INDEX *index) {
 void print_row(FILE *output, GTF_ROW *r, char delim) {
 	int i;
 
-	for (i = 0; i < nb_column - 1; i++) column[i]->print(r->data[i], output, column[i], delim);
-	column[i]->print(r->data[i], output, NULL, 0);
+	for (i = 0; i < 8; i++) column[i]->print(r->field[i], output, column[i], delim);
+	column[8]->print(r, output, NULL, 0);
 	fprintf(output, "\n");
 }
 
 /*
- * Prints the value of an attribute (attr) from token (ATTRIBUTES) in output,
- * whith the given delimiter. If the attribute attr is not in token, prints
- * "NA". This function is used in get_fasta.c to print the header of fasta
- * sequences.
+ * Prints the value of an attribute (attr) from a row in output, whith the
+ * given delimiter. If the attribute attr is not in token, prints "NA". This
+ * function is used in get_fasta.c to print the header of fasta sequences.
  *
  * Parameters:
- * 		token:		the attributes in which to search
+ * 		row:		the row in which to search
  * 		attr:		the attribute to print (value)
  * 		output:		where to print
  * 		delim:		the delimiter character
  */
-/*void print_attribute(void *token, char *attr, FILE *output, char delim) {
-	int k;
-	if (((ATTRIBUTES *)token)->nb > 0) {
-		for (k = 0; k < ((ATTRIBUTES *)token)->nb; k++) {
-			if (!strcmp(attr, ((ATTRIBUTES *)token)->attr[k]->key)) {
-				delim != 0 ? fprintf(output, "%s%c", ((ATTRIBUTES *)token)->attr[k]->value, delim) : fprintf(output, "%s", ((ATTRIBUTES *)token)->attr[k]->value);
-				break;
-			}
-		}
-		if (k == ((ATTRIBUTES *)token)->nb) delim != 0 ? fprintf(output, "NA%c", delim) : fprintf(output, "NA");
-	}
-}*/
-void print_attribute(void *token, char *attr, char *output, char delim) {
-	int k;
-	if (((ATTRIBUTES *)token)->nb > 0) {
-		for (k = 0; k < ((ATTRIBUTES *)token)->nb; k++) {
-			if (!strcmp(attr, ((ATTRIBUTES *)token)->attr[k]->key)) {
-				delim != 0 ? sprintf(output, "%s%c", ((ATTRIBUTES *)token)->attr[k]->value, delim) : sprintf(output, "%s", ((ATTRIBUTES *)token)->attr[k]->value);
-				break;
-			}
-		}
-		if (k == ((ATTRIBUTES *)token)->nb) delim != 0 ? sprintf(output, "NA%c", delim) : sprintf(output, "NA");
-	}
+void print_attribute(GTF_ROW *row, char *attr, char *output, char delim) {
+	int k = is_in_attrs(row, attr);
+
+	if (k != -1)
+		delim != 0 ? sprintf(output, "%s%c", row->value[k], delim) : sprintf(output, "%s", row->value[k]);
+	else
+		delim != 0 ? sprintf(output, "NA%c", delim) : sprintf(output, "NA");
 }
 
 /*

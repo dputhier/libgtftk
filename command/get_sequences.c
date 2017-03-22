@@ -9,11 +9,10 @@
 
 extern void print_attribute(void *token, char *attr, char *output, char delim);
 extern int split_ip(char ***tab, char *s, char *delim);
-extern char *get_attribute_value(void *token, char *attr, void *r);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int index_gtf(GTF_DATA *gtf_data, char *key);
+extern int is_in_attrs(GTF_ROW *row, char *at);
 
-//extern int color;
 extern COLUMN **column;
 
 void revcomp(char *s, int n) {
@@ -121,44 +120,21 @@ static int compare_feature_tr(const void *p1, const void *p2) {
 	return 1;
 }
 
-/*void print_header(FILE *out, int row, GTF_ROW **data, int intron, int rc) {
-	fprintf(out, ">");
-	print_attribute(data[row]->data[8], "gene_id", out, '_');
-	print_attribute(data[row]->data[8], "gene_name", out, '_');
-	print_attribute(data[row]->data[8], "transcript_id", out, '_');
-	column[0]->print(data[row]->data[0], out, column[0], ':');
-	column[3]->print(data[row]->data[3], out, column[3], '-');
-	column[4]->print(data[row]->data[4], out, column[4], '_');
-	column[6]->print(data[row]->data[6], out, column[6], 0);
-	if (rc && *(char *)(data[row]->data[6]) == '-') fprintf(out, "_RC");
-	if (!intron) fprintf(out, "_mRNA");
-	fprintf(out, "\n");
-}*/
-
-char *make_header(int row, GTF_ROW **data, int intron, int rc) {
+char *make_header(GTF_ROW *row, int intron, int rc) {
 	char *buffer = (char *)calloc(1000, sizeof(char));
-	char *tmp;
 
 	strcat(buffer, ">");
-	print_attribute(data[row]->data[8], "gene_id", buffer + strlen(buffer), '_');
-	print_attribute(data[row]->data[8], "gene_name", buffer + strlen(buffer), '_');
-	print_attribute(data[row]->data[8], "transcript_id", buffer + strlen(buffer), '_');
-	tmp = column[0]->convert_to_string(data[row]->data[0], column[0]->default_value);
-	strcat(buffer, tmp);
+	print_attribute(row, "gene_id", buffer + strlen(buffer), '_');
+	print_attribute(row, "gene_name", buffer + strlen(buffer), '_');
+	print_attribute(row, "transcript_id", buffer + strlen(buffer), '_');
+	strcat(buffer, row->field[0]);
 	strcat(buffer, ":");
-	free(tmp);
-	tmp = column[3]->convert_to_string(data[row]->data[3], column[3]->default_value);
-	strcat(buffer, tmp);
+	strcat(buffer, row->field[3]);
 	strcat(buffer, "-");
-	free(tmp);
-	tmp = column[4]->convert_to_string(data[row]->data[4], column[4]->default_value);
-	strcat(buffer, tmp);
+	strcat(buffer, row->field[4]);
 	strcat(buffer, "_");
-	free(tmp);
-	tmp = column[6]->convert_to_string(data[row]->data[6], column[6]->default_value);
-	strcat(buffer, tmp);
-	free(tmp);
-	if (rc && *(char *)(data[row]->data[6]) == '-') strcat(buffer, "_RC");
+	strcat(buffer, row->field[6]);
+	if (rc && *(row->field[6]) == '-') strcat(buffer, "_RC");
 	if (!intron) strcat(buffer, "_mRNA");
 	buffer = (char *)realloc(buffer, (strlen(buffer) + 1) * sizeof(char));
 	return buffer;
@@ -216,12 +192,10 @@ FILE *get_fasta_file_index(FILE *fasta_file, char *index) {
 	return ffi;
 }
 
-char *get_attribute_value(void *token, char *attr, void *r) {
-	int k;
-	if (((ATTRIBUTES *)token)->nb > 0)
-		for (k = 0; k < ((ATTRIBUTES *)token)->nb; k++)
-			if (!strcmp(attr, ((ATTRIBUTES *)token)->attr[k]->key))
-				return ((ATTRIBUTES *)token)->attr[k]->value;
+char *get_attribute_value(GTF_ROW *row, char *attr) {
+	int k = is_in_attrs(row, attr);
+
+	if (k != -1) return row->value[k];
 	return NULL;
 }
 
@@ -314,11 +288,11 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 		 * The main loop on GTF rows
 		 */
 		for (k = 0; k < gtf_data->size; k++) {
-			row = gtf_data->data[k];
+			row = &gtf_data->data[k];
 			/*
 			 * get only transcripts and non coding RNAs (transcripted sequences)
 			 */
-			if (!strcmp(row->data[2], "transcript") || !strcmp(row->data[2], "ncRNA")) {
+			if (!strcmp(row->field[2], "transcript") || !strcmp(row->field[2], "ncRNA")) {
 				/*
 				 * Create a new SEQUENCE and add it in the results table
 				 */
@@ -330,35 +304,35 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 				/*
 				 * Make the header of the new sequence
 				 */
-				sequence->header = make_header(k, gtf_data->data, intron, rc);
+				sequence->header = make_header(row, intron, rc);
 
 				/*
 				 * save the strand
 				 */
-				sequence->strand = *(char *)(row->data[6]);
+				sequence->strand = *(row->field[6]);
 
 				/*
 				 * save the start of the transcript
 				 */
-				sequence->start = *(int *)(row->data[3]);
-				sequence->end = *(int *)(row->data[4]);
+				sequence->start = atoi(row->field[3]);
+				sequence->end = atoi(row->field[4]);
 
 				/*
 				 * save the sequence id (chromosome)
 				 */
-				sequence->seqid = strdup((char *)(row->data[0]));
+				sequence->seqid = strdup(row->field[0]);
 
 				/*
 				 * Look for chromosome in the hashtable made from genome index
 				 * file
 				 */
-				item.key = row->data[0];
+				item.key = row->field[0];
 				e = hsearch(item, FIND);
 				if (e != NULL) {
 					/*
 					 * Search for transcript ID in the index
 					 */
-					test_row_list->token = get_attribute_value(row->data[8], "transcript_id", column[8]);
+					test_row_list->token = get_attribute_value(row, "transcript_id");
 					find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[8]->index[0]->data), compare_row_list);
 
 					tr_len = 0;
@@ -368,7 +342,7 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 						 */
 						nb_exon = 0;
 						for (i = 0; i < (*find_row_list)->nb_row; i++)
-							if (!strcmp((char *)(gtf_data->data[(*find_row_list)->row[i]]->data[2]), "exon"))
+							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]].field[2], "exon"))
 								nb_exon++;
 
 						/*
@@ -382,10 +356,10 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 						 */
 						nb_exon = 0;
 						for (i = 0; i < (*find_row_list)->nb_row; i++)
-							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->data[2], "exon")) {
-								seqfrag[nb_exon].start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]);
-								seqfrag[nb_exon].end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]);
-								seqfrag[nb_exon].strand = *(char *)(gtf_data->data[(*find_row_list)->row[i]]->data[6]);
+							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]].field[2], "exon")) {
+								seqfrag[nb_exon].start = atoi(gtf_data->data[(*find_row_list)->row[i]].field[3]);
+								seqfrag[nb_exon].end = atoi(gtf_data->data[(*find_row_list)->row[i]].field[4]);
+								seqfrag[nb_exon].strand = *(gtf_data->data[(*find_row_list)->row[i]].field[6]);
 								tr_len += seqfrag[nb_exon].end - seqfrag[nb_exon].start + 1;
 								nb_exon++;
 							}
@@ -407,9 +381,9 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 						 * indexed file.
 						 */
 						if (intron) {
-							tr_len = *(int *)(row->data[4]) - *(int *)(row->data[3]) + 1;
+							tr_len = atoi(row->field[4]) - atoi(row->field[3]) + 1;
 							sequence->sequence = (char *)calloc(tr_len + 1, sizeof(char));
-							get_chunk(sequence->sequence, ff, *(long *)(e->data), maxLineSize, tr_len, *(int *)(row->data[3]), rc ? *(char *)(row->data[6]) : '+');
+							get_chunk(sequence->sequence, ff, *(long *)(e->data), maxLineSize, tr_len, atoi(row->field[3]), rc ? *(row->field[6]) : '+');
 						}
 
 						/*
@@ -433,14 +407,14 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 						 */
 						sequence->features = (FEATURES *)calloc(1, sizeof(FEATURES));
 						for (i = 0; i < (*find_row_list)->nb_row; i++) {
-							feature = gtf_data->data[(*find_row_list)->row[i]]->data[2];
+							feature = gtf_data->data[(*find_row_list)->row[i]].field[2];
 							if (strcmp(feature, "transcript") && strcmp(feature, "ncRNA")) {
 								sequence->features->feature = (FEATURE **)realloc(sequence->features->feature, (sequence->features->nb + 1) * sizeof(FEATURE *));
 								feat = sequence->features->feature[sequence->features->nb] = (FEATURE *)calloc(1, sizeof(FEATURE));
 								sequence->features->nb++;
 								feat->name = strdup(feature);
-								feat->start = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[3]);
-								feat->end = *(int *)(gtf_data->data[(*find_row_list)->row[i]]->data[4]);
+								feat->start = atoi(gtf_data->data[(*find_row_list)->row[i]].field[3]);
+								feat->end = atoi(gtf_data->data[(*find_row_list)->row[i]].field[4]);
 							}
 						}
 

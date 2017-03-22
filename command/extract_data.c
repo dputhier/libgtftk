@@ -42,25 +42,6 @@ int is_in_columns(char *col) {
 }
 
 /*
- * Look for an attribute in an attributes list.
- *
- * Parameters:
- * 		attrs:	the list of attributes to look in
- * 		at:		the attribute name to look for
- *
- * Returns:		the rank of the found attribute (or -1 if not found)
- */
-int is_in_attrs(ATTRIBUTES *attrs, char *at) {
-	int ret = -1, i;
-	for (i = 0; i < attrs->nb; i++)
-		if (!strcmp(attrs->attr[i]->key, at)) {
-			ret = i;
-			break;
-		}
-	return ret;
-}
-
-/*
  * This function extracts data from a GTF_DATA structure and pack it into
  * a RAW_DATA structure, that is a matrix of strings.
  *
@@ -82,7 +63,6 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
 	 * Some convenient local variables
 	 */
 	int i, k, n;
-	ATTRIBUTES *attrs;
 
 	/*
 	 * The list of all attributes in the given GTF_DATA
@@ -131,11 +111,6 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
 	 */
 	for (k = 0; k < gtf_data->size; k++) {
 		/*
-		 * get the attributes of the current row
-		 */
-		attrs = (ATTRIBUTES *)(gtf_data->data[k]->data[8]);
-
-		/*
 		 * reserve the memory for the corresponding result row
 		 */
 		ret->data[k] = (char **)calloc(ret->nb_columns, sizeof(char *));
@@ -149,13 +124,13 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
 			 * column extraction
 			 */
 			if ((n = is_in_columns(ret->column_name[i])) != -1)
-				ret->data[k][i] = column[n]->convert_to_string(gtf_data->data[k]->data[n], column[n]->default_value);
+				ret->data[k][i] = gtf_data->data[k].field[n];
 
 			/*
 			 * attribute extraction
 			 */
-			else if ((n = is_in_attrs(attrs, ret->column_name[i])) != -1)
-				ret->data[k][i] = attrs->attr[n]->value;
+			else if ((n = is_in_attrs(&gtf_data->data[k], ret->column_name[i])) != -1)
+				ret->data[k][i] = gtf_data->data[k].value[n];
 
 			/*
 			 * not a column and not an attribute ! (some attributes are not

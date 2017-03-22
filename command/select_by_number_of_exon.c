@@ -57,8 +57,8 @@ static void action_sbnoe(const void *nodep, const VISIT which, const int depth) 
 			datap = *((ROW_LIST **)nodep);
 			noe = 0;
 			for (i = 0; i < datap->nb_row; i++) {
-				row = gtf_d->data[datap->row[i]];
-				if (!strcmp((char *)(row->data[2]), "exon")) noe++;
+				row = &gtf_d->data[datap->row[i]];
+				if (!strcmp(row->field[2], "exon")) noe++;
 			}
 			if ((noe >= min_noe) && (noe <= max_noe)) add_row_list(datap, row_list);
 			break;
@@ -122,8 +122,14 @@ GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max) {
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
-	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
-	for (i = 0; i < row_list->nb_row; i++) ret->data[i] = gtf_data->data[row_list->row[i]];
+	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
+	for (i = 0; i < row_list->nb_row; i++) {
+		ret->data[i].field = gtf_data->data[row_list->row[i]].field;
+		ret->data[i].key = gtf_data->data[row_list->row[i]].key;
+		ret->data[i].value = gtf_data->data[row_list->row[i]].value;
+		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
+		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
+	}
 	ret->size = row_list->nb_row;
 
 	return ret;

@@ -63,9 +63,9 @@ static void action_sbts(const void *nodep, const VISIT which, const int depth) {
 			// computing the size of the transcript (the sum of exon sizes)
 			trsize = 0;
 			for (i = 0; i < datap->nb_row; i++) {
-				row = gtf_d->data[datap->row[i]];
-				if (!strcmp((char *)(row->data[2]), "exon"))
-					trsize += (*(int *)(row->data[4]) - *(int *)(row->data[3]) + 1);
+				row = &gtf_d->data[datap->row[i]];
+				if (!strcmp(row->field[2], "exon"))
+					trsize += (atoi(row->field[4]) - atoi(row->field[3]) + 1);
 			}
 
 			/* if this size is between min and max, we add the transcript rows
@@ -132,8 +132,14 @@ GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max) {
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
-	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
-	for (i = 0; i < row_list->nb_row; i++) ret->data[i] = gtf_data->data[row_list->row[i]];
+	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
+	for (i = 0; i < row_list->nb_row; i++) {
+		ret->data[i].key = gtf_data->data[row_list->row[i]].key;
+		ret->data[i].value = gtf_data->data[row_list->row[i]].value;
+		ret->data[i].field = gtf_data->data[row_list->row[i]].field;
+		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
+		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
+	}
 	ret->size = row_list->nb_row;
 	return ret;
 }
