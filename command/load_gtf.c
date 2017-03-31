@@ -201,15 +201,16 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 		if (!strcmp(column[i]->name, key)) {
 			/*
 			 * if an index on this column exists, we need to destroy it
-			 * free is used beacause tdestroy is not implemented on OSX
+			 * free is used because tdestroy is not implemented on OSX
 			 */
 			if (column[i]->index[0]->data != NULL) {
-				free(column[i]->index[0]->data);
+				//free(column[i]->index[0]->data);
 				//tdestroy(column[i]->index[0]->data, action_destroy);
-				column[i]->index[0]->data = NULL;
+				//column[i]->index[0]->data = NULL;
 			}
-			for (k = 0; k < gtf_data->size; k++)
-				column[i]->index_row(k, column[i]->convert_to_string(gtf_data->data[k].field[i], column[i]->default_value), column[i]->index[0]);
+			else
+				for (k = 0; k < gtf_data->size; k++)
+					column[i]->index_row(k, column[i]->convert_to_string(gtf_data->data[k].field[i], column[i]->default_value), column[i]->index[0]);
 			found = 1;
 			break;
 		}
@@ -226,9 +227,9 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 				 * free is used beacause tdestroy is not implemented on OSX
 				 */
 				if (column[8]->index[i]->data != NULL) {
-					free(column[8]->index[i]->data);
+					//free(column[8]->index[i]->data);
 					//tdestroy(column[8]->index[i]->data, action_destroy);
-					column[8]->index[i]->data = NULL;
+					//column[8]->index[i]->data = NULL;
 				}
 				break;
 			}
@@ -236,20 +237,21 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 		/* if there is no index for key, we need to make one and add it in the
 		 * table
 		 */
-		if (!found) i = add_index(key);
+		if (!found) {
+			i = add_index(key);
 
-		/*
-		 * Now we have an index for key and i is his rank. We can parse the
-		 * GTF_DATA, look for key attribute in each row, and if found, add the
-		 * row in the attribute key index
-		 */
-		for (k = 0; k < gtf_data->size; k++)
-			for (j = 0; j < gtf_data->data[k].nb_attributes; j++)
-				if (!strcmp(key, gtf_data->data[k].key[j])) {
-					column[8]->index_row(k, gtf_data->data[k].value[j], column[8]->index[i]);
-					break;
-				}
-
+			/*
+			 * Now we have an index for key and i is his rank. We can parse the
+			 * GTF_DATA, look for key attribute in each row, and if found, add the
+			 * row in the attribute key index
+			 */
+			for (k = 0; k < gtf_data->size; k++)
+				for (j = 0; j < gtf_data->data[k].nb_attributes; j++)
+					if (!strcmp(key, gtf_data->data[k].key[j])) {
+						column[8]->index_row(k, gtf_data->data[k].value[j], column[8]->index[i]);
+						break;
+					}
+		}
 		// add 8 to rank for an attribute name index
 		i += 8;
 	}

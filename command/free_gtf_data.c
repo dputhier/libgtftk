@@ -12,7 +12,7 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 	int i, j;
 	GTF_ROW *row;
 
-	fprintf(stderr, "%d\n", gtf_data->size);
+	//fprintf(stderr, "%d\n", gtf_data->size);
 	for (i = 0; i < gtf_data->size; i++) {
 		row = &gtf_data->data[i];
 		for (j = 0; j < 8; j++)	free(row->field[j]);
