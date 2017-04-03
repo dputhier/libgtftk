@@ -386,21 +386,21 @@ COLUMN *make_column(char type, int i, void *dv, char *name) {
 		if (dv != NULL) *((int *)(column->default_value)) = *(int *)dv;
 		column->convert = convert_int;
 		column->convert_to_string = convert_from_int;
-		column->print = print_int;
+		column->print = print_string;
 	}
 	else if (type == 'F') {
 		column->default_value = (float *)calloc(1, sizeof(float));
 		if (dv != NULL) (*((float *)(column->default_value))) = *(float *)dv;
 		column->convert = convert_float;
 		column->convert_to_string = convert_from_float;
-		column->print = print_float;
+		column->print = print_string;
 	}
 	else if (type == 'C') {
 		column->default_value = (char *)malloc(sizeof(char));
 		if (dv != NULL) (*((char *)(column->default_value))) = *(char *)dv;
 		column->convert = convert_char;
 		column->convert_to_string = convert_from_char;
-		column->print = print_char;
+		column->print = print_string;
 	}
 	else if (type == 'A') {
 		if (dv != NULL) column->default_value = strdup((char *)dv);
