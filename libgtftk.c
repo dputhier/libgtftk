@@ -238,9 +238,9 @@ int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
  * 		gtf_data:	a pointer on the GTF data to be printed
  */
 __attribute__ ((visibility ("default")))
-void print_gtf_data(GTF_DATA *gtf_data) {
+void print_gtf_data(GTF_DATA *gtf_data, FILE *output) {
 	int i;
-	for (i = 0; i < gtf_data->size; i++) print_row(stdout, &gtf_data->data[i], '\t');
+	for (i = 0; i < gtf_data->size; i++) print_row(output, &gtf_data->data[i], '\t');
 }
 
 /*

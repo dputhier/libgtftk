@@ -298,7 +298,7 @@ typedef struct SEQUENCES {
  */
 GTF_DATA *load_GTF(char *input);
 GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not);
-void print_gtf_data(GTF_DATA *gtf_data);
+void print_gtf_data(GTF_DATA *gtf_data, FILE *output);
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
 GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row);
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
