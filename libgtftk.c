@@ -260,37 +260,24 @@ void print_gtf_data(GTF_DATA *gtf_data, char *output) {
  * 		delim:		a single character delimiter
  */
 __attribute__ ((visibility ("default")))
-void print_raw_data(RAW_DATA *raw_data, char delim) {
+void print_raw_data(RAW_DATA *raw_data, char delim, char *output) {
 	int i, k;
+	FILE *out = stdout;
 
-	fprintf(stdout, "%s", raw_data->column_name[0]);
-	for (i = 1; i < raw_data->nb_columns; i++) fprintf(stdout, "%c%s", delim, raw_data->column_name[i]);
-	fprintf(stdout, "\n");
+	if (*output != '-') out = fopen(output, "w");
+	if (out == NULL) out = stdout;
+	fprintf(out, "%s", raw_data->column_name[0]);
+	for (i = 1; i < raw_data->nb_columns; i++) fprintf(out, "%c%s", delim, raw_data->column_name[i]);
+	fprintf(out, "\n");
 	for (i = 0; i < raw_data->nb_rows; i++) {
-		fprintf(stdout, "%s", raw_data->data[i][0]);
-		for (k = 1; k < raw_data->nb_columns; k++) fprintf(stdout, "%c%s", delim, raw_data->data[i][k]);
-			fprintf(stdout, "\n");
+		fprintf(out, "%s", raw_data->data[i][0]);
+		for (k = 1; k < raw_data->nb_columns; k++) fprintf(out, "%c%s", delim, raw_data->data[i][k]);
+			fprintf(out, "\n");
 	}
-}
-
-/*
- * Transforms a GTF_ROW in a GTF_ROW_CHAR, that is the same data but not typed
- * (all fields are strings).
- *
- * Parameters:
- * 		row:	the GTF_ROW to be transformed
- *
- * Returns:		a pointer on the transformed GTF_ROW_CHAR
- */
-__attribute__ ((visibility ("default")))
-GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row) {
-	int i;
-	GTF_ROW_CHAR *ret = (GTF_ROW_CHAR *)calloc(1, sizeof(GTF_ROW_CHAR));
-	ret->rank = row->rank;
-	ret->data = (char **)calloc(9, sizeof(char *));
-	for (i = 0; i < 8; i++) ret->data[i] = row->field[i];
-
-	return ret;
+	if (out != stdout) {
+		fflush(out);
+		fclose(out);
+	}
 }
 
 /*
@@ -299,7 +286,7 @@ GTF_ROW_CHAR *gtf_row_to_char(GTF_ROW *row) {
  * at the beginning of this file. For more information about twalk, see the
  * man pages.
  */
-static void action_nb(const void *nodep, const VISIT which, const int depth) {
+/*static void action_nb(const void *nodep, const VISIT which, const int depth) {
 	switch (which) {
 		case preorder:
 			break;
@@ -310,7 +297,7 @@ static void action_nb(const void *nodep, const VISIT which, const int depth) {
 		case endorder:
 			break;
 	}
-}
+}*/
 
 /*
  * Look for an attribute in a row.

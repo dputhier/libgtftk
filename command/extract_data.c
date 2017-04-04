@@ -16,6 +16,7 @@
  */
 extern int split_ip(char ***tab, char *s, char *delim);
 extern STRING_LIST *get_attribute_list(GTF_DATA *gtf_data);
+extern int is_in_attrs(GTF_ROW *row, char *at);
 
 /*
  * global variables declaration
@@ -53,7 +54,7 @@ int is_in_columns(char *col) {
  * Returns:			a matrix of strings, packed into a RAW_DATA structure
  */
 __attribute__ ((visibility ("default")))
-RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
+RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base, int uniq) {
 	/*
 	 * Declaration and reservation of the structure to be returned
 	 */
@@ -62,7 +63,7 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
 	/*
 	 * Some convenient local variables
 	 */
-	int i, k, n;
+	int i, k, n, j;
 
 	/*
 	 * The list of all attributes in the given GTF_DATA
@@ -92,13 +93,15 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
 		for (i = 0; i < attributes->nb; i++) ret->column_name[ret->nb_columns++] = strdup(attributes->list[i]);
 		free(attributes->list);
 	}
-	else
+	else {
 		/*
 		 * if key contains a list of column and attribute names, split this
 		 * list right in the RAW_DATA structure
 		 */
+		//fprintf(stderr, "coucou : %s %d %lu\n", key, ret->nb_columns, &(ret->column_name));
 		ret->nb_columns = split_ip(&(ret->column_name), key, ",");
-
+		//fprintf(stderr, "coucou : %d\n", ret->nb_columns);
+	}
 	/*
 	 * reserve the memory for the string matrix and setup the number of rows
 	 * in the matrix (always the same as in the GTF_DATA)
@@ -123,14 +126,27 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key) {
 			/*
 			 * column extraction
 			 */
-			if ((n = is_in_columns(ret->column_name[i])) != -1)
-				ret->data[k][i] = gtf_data->data[k].field[n];
+			if ((n = is_in_columns(ret->column_name[i])) != -1) {
+				/*
+				 * do a copy of the field, as it may be altered
+				 */
+				ret->data[k][i] = strdup(gtf_data->data[k].field[n]);
+
+				/*
+				 * if we want data 0-based, we must remove 1 from the start
+				 * value
+				 */
+				if (!strcmp(ret->column_name[i], "start") && !base) {
+					j = atoi(ret->data[k][i]) - 1;
+					sprintf(ret->data[k][i], "%d", j);
+				}
+			}
 
 			/*
 			 * attribute extraction
 			 */
 			else if ((n = is_in_attrs(&gtf_data->data[k], ret->column_name[i])) != -1)
-				ret->data[k][i] = gtf_data->data[k].value[n];
+				ret->data[k][i] = strdup(gtf_data->data[k].value[n]);
 
 			/*
 			 * not a column and not an attribute ! (some attributes are not

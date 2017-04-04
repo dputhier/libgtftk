@@ -121,7 +121,7 @@ GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max) {
 	i = index_gtf(gtf_data, "transcript_id") - 8;
 
 	// tree browsing of the transcript_id index
-	twalk(column[8]->index[i]->data, action_sbts);
+	twalk(column[8]->index[i].data, action_sbts);
 
 	/*
 	 * we sort the resulting row list to be sure to respect the original order

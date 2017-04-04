@@ -41,10 +41,11 @@ extern COLUMN **column;
  * 					of each gene
  * 	gtf_d:			a local copy of the GTF_DATA to process
  * 	tr_type:		the kind of transcript we want to get (shortest or longest)
+ * 	tid_index:		the rank of the transcript_id index
  */
 ROW_LIST *row_list, *test_row_list, **find_row_list;
 GTF_DATA *gtf_d;
-int tr_type;
+int tr_type, tid_index;
 
 /*
  * The function used by twalk on each node of the index tree.
@@ -147,7 +148,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 							 * to get all the rows related to it
 							 */
 							row_list->token = row->value[j];
-							find_row_list = (ROW_LIST **)tfind(row_list, &(column[8]->index[1]->data), compare_row_list);
+							find_row_list = (ROW_LIST **)tfind(row_list, &(column[8]->index[tid_index].data), compare_row_list);
 							if (find_row_list != NULL) {
 								trsize = 0;
 
@@ -246,7 +247,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 			/*
 			 * get transcript rows
 			 */
-			find_row_list = tfind(test_row_list, &(column[8]->index[1]->data), compare_row_list);
+			find_row_list = tfind(test_row_list, &(column[8]->index[tid_index].data), compare_row_list);
 
 			/*
 			 * we add the gene and transcript rows in the row_list structure
@@ -262,7 +263,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
-	int i;
+	int i, gid_index;
 
 	/*
 	 * we save the transcript type to allow action_st to access it
@@ -280,8 +281,8 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	 * The rank of this index is 0. The second index contains, for each
 	 * transcript, the list of his related rows. The rank of this index is 1.
 	 */
-	index_gtf(gtf_data, "gene_id");
-	index_gtf(gtf_data, "transcript_id");
+	gid_index = index_gtf(gtf_data, "gene_id");
+	tid_index = index_gtf(gtf_data, "transcript_id");
 
 	/*
 	 * setup local variables to allow action_sst function to access these
@@ -296,7 +297,7 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	test_row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
 
 	// tree browsing of the gene_id index (rank 0)
-	twalk(column[8]->index[0]->data, action_st);
+	twalk(column[8]->index[gid_index].data, action_st);
 
 	/*
 	 * we sort the resulting row list to respect the original order of the

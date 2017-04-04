@@ -20,8 +20,7 @@ extern void make_columns();
 extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
 extern int split_ip(char ***tab, char *s, char *delim);
 extern void split_key_value(char *s, char **key, char **value);
-
-//extern struct hsearch_data *attr_hash;
+extern void index_row(int row_nb, char *value, INDEX *index);
 
 /*
  * global variables declaration
@@ -40,9 +39,9 @@ extern int nb_column;
  */
 int add_index(char *key) {
 	column[8]->nb_index++;
-	column[8]->index = realloc(column[8]->index, column[8]->nb_index * sizeof(INDEX *));
-	column[8]->index[column[8]->nb_index - 1] = (INDEX *)calloc(1, sizeof(INDEX));
-	column[8]->index[column[8]->nb_index - 1]->key = strdup(key);
+	column[8]->index = realloc(column[8]->index, column[8]->nb_index * sizeof(INDEX));
+	column[8]->index[column[8]->nb_index - 1].key = strdup(key);
+	column[8]->index[column[8]->nb_index - 1].data = NULL;
 	return column[8]->nb_index - 1;
 }
 
@@ -87,10 +86,6 @@ GTF_DATA *load_GTF(char *input) {
 
 	// a counter for the rows
 	nb_row = 0;
-
-	// create a hashtable to store the attributes names
-	//attr_hash = (struct hsearch_data *)calloc(1, sizeof(struct hsearch_data));
-	//hcreate_r(100, attr_hash);
 
 	// loop on the GTF file rows
 	while (get_next_gtf_line(gr, buffer) != NULL) {
@@ -200,41 +195,28 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 	for (i = 0; i < (nb_column - 1); i++)
 		if (!strcmp(column[i]->name, key)) {
 			/*
-			 * if an index on this column exists, we need to destroy it
-			 * free is used because tdestroy is not implemented on OSX
+			 * if an index on this column doesn't exist, we create it by
+			 * indexing each row of the GTF data
 			 */
-			if (column[i]->index[0]->data != NULL) {
-				//free(column[i]->index[0]->data);
-				//tdestroy(column[i]->index[0]->data, action_destroy);
-				//column[i]->index[0]->data = NULL;
-			}
-			else
+			if (column[i]->index->data == NULL)
 				for (k = 0; k < gtf_data->size; k++)
-					column[i]->index_row(k, column[i]->convert_to_string(gtf_data->data[k].field[i], column[i]->default_value), column[i]->index[0]);
+					index_row(k, gtf_data->data[k].field[i], column[i]->index);
 			found = 1;
 			break;
 		}
 	if (!found) {
-		/* key is not a column name so look for key in the attribute index
+		/*
+		 * key is not a column name so look for key in the attribute index
 		 * table
 		 */
 		for (i = 0; i < column[8]->nb_index; i++)
-			if (!strcmp(column[8]->index[i]->key, key)) {
+			if (!strcmp(column[8]->index[i].key, key)) {
 				found = 1;
-
-				/*
-				 * if an index on this attribute exists, we need to destroy it
-				 * free is used beacause tdestroy is not implemented on OSX
-				 */
-				if (column[8]->index[i]->data != NULL) {
-					//free(column[8]->index[i]->data);
-					//tdestroy(column[8]->index[i]->data, action_destroy);
-					//column[8]->index[i]->data = NULL;
-				}
 				break;
 			}
 
-		/* if there is no index for key, we need to make one and add it in the
+		/*
+		 * if there is no index for key, we need to make one and add it in the
 		 * table
 		 */
 		if (!found) {
@@ -248,9 +230,10 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 			for (k = 0; k < gtf_data->size; k++)
 				for (j = 0; j < gtf_data->data[k].nb_attributes; j++)
 					if (!strcmp(key, gtf_data->data[k].key[j])) {
-						column[8]->index_row(k, gtf_data->data[k].value[j], column[8]->index[i]);
+						index_row(k, gtf_data->data[k].value[j], column[8]->index + i);
 						break;
 					}
+
 		}
 		// add 8 to rank for an attribute name index
 		i += 8;
