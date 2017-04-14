@@ -50,11 +50,12 @@ int is_in_columns(char *col) {
  * 		gtf_data:	the GTF source data
  * 		key:		the list of column names and attribute names that are to be
  * 					extracted (separated by "," character)
+ * 		base:		0 or 1 : 0-based or 1-based data
  *
  * Returns:			a matrix of strings, packed into a RAW_DATA structure
  */
 __attribute__ ((visibility ("default")))
-RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base, int uniq) {
+RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 	/*
 	 * Declaration and reservation of the structure to be returned
 	 */
@@ -98,9 +99,7 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base, int uniq) {
 		 * if key contains a list of column and attribute names, split this
 		 * list right in the RAW_DATA structure
 		 */
-		//fprintf(stderr, "coucou : %s %d %lu\n", key, ret->nb_columns, &(ret->column_name));
-		ret->nb_columns = split_ip(&(ret->column_name), key, ",");
-		//fprintf(stderr, "coucou : %d\n", ret->nb_columns);
+		ret->nb_columns = split_ip(&(ret->column_name), strdup(key), ",");
 	}
 	/*
 	 * reserve the memory for the string matrix and setup the number of rows

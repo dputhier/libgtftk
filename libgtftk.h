@@ -51,16 +51,24 @@
  * sure to be compatible with the most of native interfaces.
  */
 typedef struct GTF_READER {
-	// The file name with its path (or "-" for standard input)
+	/*
+	 * The file name with its path (or "-" for standard input)
+	 */
 	char *filename;
 
-	// A boolean to tell if it is a gzipped file
+	/*
+	 * A boolean to tell if it is a gzipped file
+	 */
 	int gz;
 
-	// The gzip file descriptor
+	/*
+	 * The gzip file descriptor
+	 */
 	gzFile gzfile;
 
-	// The plain file descriptor
+	/*
+	 * The plain file descriptor
+	 */
 	FILE *plainfile;
 } GTF_READER;
 
@@ -69,14 +77,20 @@ typedef struct GTF_READER {
  * of the 8 first fields. Attributes are stored in the key/value string tables.
  */
 typedef struct GTF_ROW {
-	// the 8 first fields of a GTF file row
+	/*
+	 * the 8 first fields of a GTF file row
+	 */
 	char **field;
 
-	// the attributes
+	/*
+	 * the attributes
+	 */
 	int nb_attributes;
 	char **key, **value;
 
-	// the rank number of the row in the GTF file
+	/*
+	 * the rank number of the row in the GTF file
+	 */
 	int rank;
 } GTF_ROW;
 
@@ -90,10 +104,14 @@ typedef struct GTF_ROW {
  * another function of the library.
  */
 typedef struct GTF_DATA {
-	// the number of rows
+	/*
+	 * the number of rows
+	 */
 	int size;
 
-	// a table of rows
+	/*
+	 * a table of rows
+	 */
 	GTF_ROW *data;
 } GTF_DATA;
 
@@ -116,7 +134,17 @@ typedef struct INDEX {
 	 * token as the value of the key (a column name or an attribute name).
 	 */
 	void *data;
+
+	/*
+	 * a reference to the GTF_DATA on which the index has been made
+	 */
+	GTF_DATA *gtf_data;
 } INDEX;
+
+typedef struct INDEX_ID {
+	int column;
+	int index_rank;
+} INDEX_ID;
 
 /*
  * This is a class-like structure that modelize a column of a GTF file. It
@@ -131,7 +159,9 @@ typedef struct INDEX {
  * source file, depending on the type of each column.
  */
 typedef struct COLUMN {
-	// the rank number of the column
+	/*
+	 * the rank number of the column
+	 */
 	int num;
 
 	/*
@@ -140,7 +170,9 @@ typedef struct COLUMN {
 	 */
 	char *name;
 
-	// the default value to print if no value is available (".")
+	/*
+	 * the default value to print if no value is available (".")
+	 */
 	char *default_value;
 
 	/*
@@ -150,7 +182,9 @@ typedef struct COLUMN {
 	 */
 	INDEX *index;
 
-	// the number of indexes in the previous table
+	/*
+	 * the number of indexes in the previous table
+	 */
 	int nb_index;
 } COLUMN ;
 
@@ -160,16 +194,21 @@ typedef struct COLUMN {
  * structure is used in the indexes as elements.
  */
 typedef struct ROW_LIST {
-	/* the token that is contained in the rows. For example, this can be "gene"
+	/*
+	 * the token that is contained in the rows. For example, this can be "gene"
 	 * or "transcript" for an index on the column feGTF_DATA *select_transcript(GTF_DATA *gtf_data, int type)ature, or "protein_coding"
 	 * and "lincRNA" for an index on the attribute "gene_biotype".
 	 */
 	char *token;
 
-	// the number of rows
+	/*
+	 * the number of rows
+	 */
 	int nb_row;
 
-	// the table of row numbers
+	/*
+	 * the table of row numbers
+	 */
 	int *row;
 } ROW_LIST;
 
@@ -241,6 +280,11 @@ typedef struct SEQUENCES {
 	SEQUENCE **sequence;
 } SEQUENCES;
 
+typedef struct TTEXT {
+	int size;
+	char ***data;
+} TTEXT;
+
 /*
  * Prototypes for the visible functions (callable by external cient)
  */
@@ -250,7 +294,7 @@ void print_gtf_data(GTF_DATA *gtf_data, char *output);
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr, int *begin_gl, int *end_gl);
-RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base, int uniq);
+RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base);
 void print_raw_data(RAW_DATA *raw_data, char delim, char *output);
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type);
 SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int rc);
@@ -258,5 +302,6 @@ int free_gtf_data(GTF_DATA *gtf_data);
 int free_raw_data(RAW_DATA *raw_data);
 char *get_memory(long int size);
 int free_mem(char *ptr);
+TTEXT *get_feature_list(GTF_DATA *gtf_data);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

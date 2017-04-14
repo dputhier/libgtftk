@@ -21,6 +21,7 @@ extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
 extern int split_ip(char ***tab, char *s, char *delim);
 extern void split_key_value(char *s, char **key, char **value);
 extern void index_row(int row_nb, char *value, INDEX *index);
+extern INDEX *make_index(INDEX_ID **index_id, char *key);
 
 /*
  * global variables declaration
@@ -37,11 +38,12 @@ extern int nb_column;
  *
  * Returns:		the rank of the index in the index table of the column
  */
-int add_index(char *key) {
+int add_index(char *key, GTF_DATA *gtf_data) {
 	column[8]->nb_index++;
 	column[8]->index = realloc(column[8]->index, column[8]->nb_index * sizeof(INDEX));
 	column[8]->index[column[8]->nb_index - 1].key = strdup(key);
 	column[8]->index[column[8]->nb_index - 1].data = NULL;
+	column[8]->index[column[8]->nb_index - 1].gtf_data = gtf_data;
 	return column[8]->nb_index - 1;
 }
 
@@ -174,6 +176,92 @@ void action_destroy(void *nodep) {
 
 }
 
+INDEX_ID *get_index(GTF_DATA *gtf_data, char *key) {
+	int c, k;
+	INDEX_ID *ret = calloc(1, sizeof(INDEX_ID));
+
+	ret->column = ret->index_rank = -1;
+
+	// look for key in the 8 first column names and index the column if found
+	for (c = 0; c < (nb_column - 1); c++)
+		if (!strcmp(column[c]->name, key)) {
+			/*
+			 * key is the name of a column
+			 * if an index on this column exists and correspond to the gtf_data
+			 * parameter, we return it
+			 */
+			ret->column = c;
+			for (k = 0; k < column[c]->nb_index; k++) {
+				if ((column[c]->index[k].data != NULL) && (column[c]->index[k].gtf_data == gtf_data)) {
+					ret->index_rank = k;
+					//ret = &(column[c]->index[k]);
+				}
+				break;
+			}
+			break;
+		}
+
+	if (ret->column == -1) {
+		/*
+		 * key is not a column name so look for key in the attribute index
+		 * table of the 8th column
+		 */
+		ret->column = 8;
+		for (c = 0; c < column[8]->nb_index; c++)
+			/*
+			 * if an index on this parameter exists and correspond to the
+			 * gtf_data parameter, we return it
+			 */
+			if (!strcmp(column[8]->index[c].key, key)) {
+				/*
+				 * key is the name of a parameter
+				 * if an index on this parameter exists and correspond to the
+				 * gtf_data parameter, we return it
+				 */
+				if ((column[8]->index[c].data != NULL) && (column[8]->index[c].gtf_data == gtf_data)) {
+					ret->index_rank = c;
+					//ret = &(column[8]->index[c]);
+				}
+				break;
+			}
+	}
+	return ret;
+}
+
+INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key, int *index_rank) {
+	int j, k;
+
+	INDEX_ID *index_id = get_index(gtf_data, key);
+
+	if (index_id->index_rank == -1) {
+		//fprintf(stderr, "NULL index for %s\n", key);
+		make_index(&index_id, key);
+		//fprintf(stderr, "coucoucou : %s %d\n", column[index_id->column]->index[index_id->index_rank]->key, column[index_id->column]->nb_index);
+		if (index_id->column != 8) {
+			for (k = 0; k < gtf_data->size; k++) {
+				//fprintf(stderr, "indexing : %d %s ... ", k, gtf_data->data[k].field[i]);
+				index_row(k, gtf_data->data[k].field[index_id->column], column[index_id->column]->index + index_id->index_rank);
+				//fprintf(stderr, "done.\n");
+			}
+			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
+		}
+		else {
+			//i = add_index(key, gtf_data);
+			for (k = 0; k < gtf_data->size; k++)
+				for (j = 0; j < gtf_data->data[k].nb_attributes; j++)
+					if (!strcmp(key, gtf_data->data[k].key[j])) {
+						index_row(k, gtf_data->data[k].value[j], column[index_id->column]->index + index_id->index_rank);
+						break;
+					}
+			//i += 8;
+			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
+		}
+	}
+
+	//fprintf(stderr, "i = %d\n", i);
+	return index_id;
+}
+
 /*
  * Indexes a GTF_DATA with a column name or an attribute name. The return value
  * is the rank of the column for a column name index or the rank of the
@@ -186,12 +274,14 @@ void action_destroy(void *nodep) {
  *
  * Returns:			the column rank (0-7) or the attribute index rank + 8
  */
-int index_gtf(GTF_DATA *gtf_data, char *key) {
+int index_gtf_old(GTF_DATA *gtf_data, char *key) {
 	int i, j, k, found;
 
 	found = 0;
 
-	// look for key in the 8 first column names and index the column if found
+	/*
+	 * look for key in the 8 first column names and index the column if found
+	 */
 	for (i = 0; i < (nb_column - 1); i++)
 		if (!strcmp(column[i]->name, key)) {
 			/*
@@ -220,7 +310,7 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 		 * table
 		 */
 		if (!found) {
-			i = add_index(key);
+			i = add_index(key, gtf_data);
 
 			/*
 			 * Now we have an index for key and i is his rank. We can parse the
@@ -235,7 +325,9 @@ int index_gtf(GTF_DATA *gtf_data, char *key) {
 					}
 
 		}
-		// add 8 to rank for an attribute name index
+		/*
+		 * add 8 to rank for an attribute name index
+		 */
 		i += 8;
 	}
 	return i;

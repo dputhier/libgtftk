@@ -14,7 +14,7 @@
 /*
  * external functions declaration
  */
-extern int index_gtf(GTF_DATA *gtf_data, char *key);
+extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int comprow(const void *m1, const void *m2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
 
@@ -83,6 +83,7 @@ static void action_sbnoe(const void *nodep, const VISIT which, const int depth) 
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max) {
 	int i;
+	INDEX_ID *trid_index_id;
 
 	/*
 	 * reserve memory for the GTF_DATA structure to return
@@ -104,14 +105,12 @@ GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max) {
 
 	/*
 	 * indexes the GTF_DATA with transcript_id attribute to create an index
-	 * containing, for each transcript, the list of his related rows. The real
-	 * rank of the index (- 8) in the attributes column index table is stored
-	 * in i.
+	 * containing, for each transcript, the list of his related rows.
 	 */
-	i = index_gtf(gtf_data, "transcript_id") - 8;
+	trid_index_id = index_gtf(gtf_data, "transcript_id");
 
 	// tree browsing of the transcript_id index
-	twalk(column[8]->index[i].data, action_sbnoe);
+	twalk(column[trid_index_id->column]->index[trid_index_id->index_rank].data, action_sbnoe);
 
 	/*
 	 * we sort the resulting row list to be sure to respect the original order

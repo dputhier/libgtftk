@@ -17,13 +17,34 @@
 extern int comprow(const void *m1, const void *m2);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
-extern int index_gtf(GTF_DATA *gtf_data, char *key);
+extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int split_ip(char ***tab, char *s, char *delim);
 
 /*
  * global variables declaration
  */
 extern COLUMN **column;
+
+int N;
+
+/*
+ * This function is intended to be used with the C twalk function. It is used
+ * to evaluate the number of elements in an index. the N variable is declared
+ * at the beginning of this file. For more information about twalk, see the
+ * man pages.
+ */
+/*static void action_nb(const void *nodep, const VISIT which, const int depth) {
+	switch (which) {
+		case preorder:
+			break;
+		case postorder:
+		case leaf:
+			N++;
+			break;
+		case endorder:
+			break;
+	}
+}*/
 
 /*
  * select_by_key function selects rows in GTF_DATA that contains some given
@@ -75,43 +96,16 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 
 	/*
 	 * indexing the GTF_DATA with the given key (column name or attribute name)
-	 * and get the rank of the concerned index (i)
 	 */
-	i = index_gtf(gtf_data, key);
-	// kept just to remind me how to parse a binary tree with twalk !
-	/*for (k = 0; k < column[8]->nb_index; k++) {
-		N = 0;
-		twalk(column[8]->index[k]->data, action_nb);
-		fprintf(stderr, "%s : %d\n", column[8]->index[k]->key, N);
-	}*/
+	INDEX_ID *index_id = index_gtf(gtf_data, key);
+
+	//int N = 0;
+	//twalk(column[index_id->column]->index[index_id->index_rank].data, action_nb);
+	//fprintf(stderr, "nb index : %d\n", column[index_id->column]->nb_index);
+	//fprintf(stderr, "%s : %d\n", column[index_id->column]->index[index_id->index_rank].key, N);
 
 	// reserve memory for the final ROW_LIST
 	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
-
-	/*
-	 * this test on i is intended to setup the values of i and k.
-	 * i must contain the rank of the concerned column (0-8) and k must
-	 * contain the value of the index rank in the column (0 for the 8 first
-	 * columns that contains only one index, and another value for the 9th
-	 * column)
-	 */
-	if (i < 8) {
-		/*
-		 * the given key is a column name so i is the column rank and doesn't
-		 * need to be updated. k is setup to 0 because the 8 first columns
-		 * contain only one index
-		 */
-		k = 0;
-	}
-	else {
-		/*
-		 * the given key is an attribute name so k is setup to i - 8 to
-		 * retrieve the value of the concerned attribute index and i is setup
-		 * to 8 (the rank of the 9th column)
-		 */
-		k = i - 8;
-		i = 8;
-	}
 
 	for (p = 0; p < nb_value; p++) {
 		/*
@@ -121,7 +115,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * suppressed by add_row_list function.
 		 */
 		test_row_list->token = values[p];
-		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[i]->index[k].data), compare_row_list);
+		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[index_id->column]->index[index_id->index_rank].data), compare_row_list);
 		if (find_row_list != NULL) add_row_list(*find_row_list, row_list);
 	}
 
@@ -147,6 +141,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 */
 		ret->data = (GTF_ROW *)calloc(ret->size, sizeof(GTF_ROW));
 
+		//fprintf(stderr, "ret size = %d\n", ret->size);
 		/*
 		 * each row in row_list is a number used to get the real GTF_ROW in the
 		 * whole GTF data

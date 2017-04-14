@@ -60,6 +60,16 @@ void print_attributes(void *token, FILE *output, void *col, char delim) {
 	}
 }
 
+void make_index(INDEX_ID **p_index_id, char *key) {
+	column[(*p_index_id)->column]->nb_index++;
+	column[(*p_index_id)->column]->index = (INDEX *)realloc(column[(*p_index_id)->column]->index, column[(*p_index_id)->column]->nb_index * sizeof(INDEX));
+	INDEX *index = column[(*p_index_id)->column]->index + column[(*p_index_id)->column]->nb_index - 1;
+	index->data = NULL;
+	index->gtf_data = NULL;
+	index->key = strdup(key);
+	(*p_index_id)->index_rank = column[(*p_index_id)->column]->nb_index - 1;
+}
+
 /*
  * This function adds a row (row_nb) into an index.
  *
@@ -76,13 +86,15 @@ void index_row(int row_nb, char *value, INDEX *index) {
 
 		test_row_list = calloc(1, sizeof(ROW_LIST));
 		test_row_list->token = value;
+		//fprintf(stderr, "ho\n");
 		find_row_list = tfind(test_row_list, &(index->data), compare_row_list);
-
 		if (find_row_list == NULL) {
 			/*
 			 * value is not in the index so we reserve a ROW_LIST, initialize it
 			 * with one row (row_nb) and put it in the index (tsearch)
 			 */
+
+			//fprintf(stderr, "creating index element %s\n", value);
 			row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
 			row_list->token = value;
 			row_list->nb_row = 1;
@@ -95,6 +107,7 @@ void index_row(int row_nb, char *value, INDEX *index) {
 			 * value is already in the index so we just have to add row_nb into
 			 * the ROW_LIST element found
 			 */
+			//fprintf(stderr, "adding row %d in element %s\n", row_nb, value);
 			row_list = *((ROW_LIST **)find_row_list);
 			row_list->nb_row++;
 			row_list->row = (int *)realloc(row_list->row, row_list->nb_row * sizeof(int));
@@ -166,8 +179,8 @@ void make_columns() {
 	column[8] = make_column('A', 8, ".", "attributes");
 
 	for (i = 0; i < (nb_column - 1); i++) {
-		column[i]->index = (INDEX *)calloc(1, sizeof(INDEX));
-		column[i]->index->key = column[i]->name;
-		column[i]->nb_index = 1;
+		//column[i]->index = (INDEX *)calloc(1, sizeof(INDEX));
+		//column[i]->index->key = column[i]->name;
+		//column[i]->nb_index = 1;
 	}
 }

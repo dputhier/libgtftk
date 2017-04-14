@@ -145,37 +145,6 @@ void split_key_value(char *s, char **key, char **value) {
 	*value = strdup(s);
 }
 
-/*int split_key_value2(char *s, char **value) {
-	int k = 0, i;
-	ENTRY e, *re;
-
-	while (*s == ' ') s++;
-	while (*(s + k) != ' ') k++;
-	*(s + k) = 0;
-	e.key = s;
-	s += k + 1;
-	while ((*s == ' ') || (*s == '"')) s++;
-	k = 0;
-	while ((*(s + k) != '"') && (*(s + k) != ' ') && (*(s + k) != 0)) k++;
-	*(s + k) = 0;
-	*value = strdup(s);
-
-	hsearch_r(e, FIND, &re, attr_hash);
-	if (re == NULL) {
-		e.data = (int *)calloc(1, sizeof(int));
-		*(int *)(e.data) = nb_attributes;
-		attributes = (char **)realloc(attributes, (nb_attributes + 1) * sizeof(char *));
-		attributes[nb_attributes] = strdup(e.key);
-		i = nb_attributes;
-		nb_attributes++;
-		hsearch_r(e, ENTER, &re, attr_hash);
-	}
-	else
-		i = *(int *)(re->data);
-	return i;
-}*/
-
-
 /*
  * This function is used by the C tsearch and tfind functions to search and
  * add ROW_LIST elements in all the indexes on the columns of a GTF file. For
@@ -281,25 +250,6 @@ void print_raw_data(RAW_DATA *raw_data, char delim, char *output) {
 }
 
 /*
- * This function is intended to be used with the C twalk function. It is used
- * to evaluate the number of elements in an index. the N variable is declared
- * at the beginning of this file. For more information about twalk, see the
- * man pages.
- */
-/*static void action_nb(const void *nodep, const VISIT which, const int depth) {
-	switch (which) {
-		case preorder:
-			break;
-		case postorder:
-		case leaf:
-			N++;
-			break;
-		case endorder:
-			break;
-	}
-}*/
-
-/*
  * Look for an attribute in a row.
  *
  * Parameters:
@@ -333,37 +283,6 @@ int free_mem(char *ptr) {
 }
 
 /*__attribute__ ((visibility ("default")))
-TAB_RESULT *get_feature_list_lib(char *gtf_filename) {
-	char *buffer;
-	size_t size = 0;
-	FILE *output = open_memstream(&buffer, &size);
-	TAB_RESULT *ret = (TAB_RESULT *)calloc(1, sizeof(TAB_RESULT));
-	char *line = (char *)calloc(10000, sizeof(char)), *ptr;
-	int n, i;
-
-	column = NULL;
-	data = NULL;
-	nb_column = nb_row = 0;
-	init_ftp_data();
-	init_gtf(gtf_filename, "feature", &column, &nb_column, &data, &nb_row);
-	n = get_feature_list(output);
-	fflush(output);
-	fclose(output);
-	FILE *input = fmemopen(buffer, size, "r");
-	ret->data = (char **)calloc(n, sizeof(char *));
-	for (i = 0; i < n; i++) {
-		fgets(line, 9999, input);
-		*(line + strlen(line) - 1) = 0;
-		ret->data[i] = strdup(line);
-		ptr = strchr(ret->data[i], (int)':');
-		if (ptr != NULL) *ptr = '\t';
-	}
-	ret->size = n;
-	if (buffer != NULL) free(buffer);
-	return ret;
-}
-
-__attribute__ ((visibility ("default")))
 TAB_RESULT *get_attribute_list_lib(char *gtf_filename) {
 	char *buffer;
 	size_t size = 0;

@@ -9,7 +9,7 @@
 
 extern int split_ip(char ***tab, char *s, char *delim);
 extern int compare_row_list(const void *p1, const void *p2);
-extern int index_gtf(GTF_DATA *gtf_data, char *key);
+extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int is_in_attrs(GTF_ROW *row, char *at);
 
 extern COLUMN **column;
@@ -258,14 +258,15 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 	SEQFRAG *seqfrag;
 
 	char **token, *feature;
-	int i, n, nb_exon = 0, tr_len, maxLineSize = 0, pcdna, trid_index;
+	int i, n, nb_exon = 0, tr_len, maxLineSize = 0, pcdna;
 	ROW_LIST *test_row_list = calloc(1, sizeof(ROW_LIST)), **find_row_list;
 	GTF_ROW *row;
+	INDEX_ID *trid_index_id;
 
 	/*
 	 * Indexes GTF data with transcripts IDs
 	 */
-	trid_index = index_gtf(gtf_data, "transcript_id");
+	trid_index_id = index_gtf(gtf_data, "transcript_id");
 
 	/*
 	 * Test if genome file exists
@@ -351,7 +352,7 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 					 * Search for transcript ID in the index
 					 */
 					test_row_list->token = get_attribute_value(row, "transcript_id");
-					find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[8]->index[trid_index - 8].data), compare_row_list);
+					find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[8]->index[trid_index_id->index_rank].data), compare_row_list);
 
 					tr_len = 0;
 					if (find_row_list != NULL) {

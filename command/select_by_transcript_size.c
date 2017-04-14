@@ -15,7 +15,7 @@
 /*
  * external functions declaration
  */
-extern int index_gtf(GTF_DATA *gtf_data, char *key);
+extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int comprow(const void *m1, const void *m2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
 
@@ -93,6 +93,7 @@ static void action_sbts(const void *nodep, const VISIT which, const int depth) {
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max) {
 	int i;
+	INDEX_ID *trid_index_id;
 
 	/*
 	 * reserve memory for the GTF_DATA structure to return
@@ -118,10 +119,10 @@ GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max) {
 	 * rank of the index (- 8) in the attributes column index table is stored
 	 * in i.
 	 */
-	i = index_gtf(gtf_data, "transcript_id") - 8;
+	trid_index_id = index_gtf(gtf_data, "transcript_id");
 
 	// tree browsing of the transcript_id index
-	twalk(column[8]->index[i].data, action_sbts);
+	twalk(column[trid_index_id->column]->index[trid_index_id->index_rank].data, action_sbts);
 
 	/*
 	 * we sort the resulting row list to be sure to respect the original order

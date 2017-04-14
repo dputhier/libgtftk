@@ -18,7 +18,7 @@ extern COLUMN **column;
 /*
  * external functions declaration
  */
-extern int index_gtf(GTF_DATA *gtf_data, char *key);
+extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row(int row, ROW_LIST *dst);
 
@@ -38,6 +38,7 @@ __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr, int *begin_gl, int *end_gl) {
 	int i, j, start, end, k;
 	ROW_LIST **find_row_list, *row_list, *test_row_list;
+	INDEX_ID *seqid_index_id;
 
 	/*
 	 * reserve memory for the GTF_DATA structure to return
@@ -48,7 +49,7 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	 * indexes the GTF_DATA with seqid column to create an index containing,
 	 * for each chromosome, the list of his related rows.
 	 */
-	i = index_gtf(gtf_data, "seqid");
+	seqid_index_id = index_gtf(gtf_data, "seqid");
 
 	// reserve memory for the final ROW_LIST
 	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
@@ -65,15 +66,15 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 		 * Find all rows related to the given chromosome
 		 */
 		test_row_list->token = chr[k];
-		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[0]->index[i].data), compare_row_list);
+		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[0]->index[seqid_index_id->index_rank].data), compare_row_list);
 		if (find_row_list != NULL) {
 			for (j = 0; j < (*find_row_list)->nb_row; j++) {
 				/*
 				 * For each row, get the start and end values (start and end
 				 * columns are 3rd and 4th columns in GTF format)
 				 */
-				start = *((int *)gtf_data->data[(*find_row_list)->row[j]].field[3]);
-				end = *((int *)gtf_data->data[(*find_row_list)->row[j]].field[4]);
+				start = atoi(gtf_data->data[(*find_row_list)->row[j]].field[3]);
+				end = atoi(gtf_data->data[(*find_row_list)->row[j]].field[4]);
 
 				/*
 				 * If start and end values of the row match with the given
