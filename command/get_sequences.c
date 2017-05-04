@@ -140,9 +140,9 @@ char *make_header(int row, GTF_ROW **data, int intron, int rc) {
 	char *tmp;
 
 	strcat(buffer, ">");
-	print_attribute(data[row]->data[8], "gene_id", buffer + strlen(buffer), '_');
-	print_attribute(data[row]->data[8], "gene_name", buffer + strlen(buffer), '_');
-	print_attribute(data[row]->data[8], "transcript_id", buffer + strlen(buffer), '_');
+	print_attribute(data[row]->data[8], "gene_id", buffer + strlen(buffer), '`');
+	print_attribute(data[row]->data[8], "gene_name", buffer + strlen(buffer), '`');
+	print_attribute(data[row]->data[8], "transcript_id", buffer + strlen(buffer), '`');
 	tmp = column[0]->convert_to_string(data[row]->data[0], column[0]->default_value);
 	strcat(buffer, tmp);
 	strcat(buffer, ":");
@@ -153,13 +153,13 @@ char *make_header(int row, GTF_ROW **data, int intron, int rc) {
 	free(tmp);
 	tmp = column[4]->convert_to_string(data[row]->data[4], column[4]->default_value);
 	strcat(buffer, tmp);
-	strcat(buffer, "_");
+	strcat(buffer, "`");
 	free(tmp);
 	tmp = column[6]->convert_to_string(data[row]->data[6], column[6]->default_value);
 	strcat(buffer, tmp);
 	free(tmp);
-	if (rc && *(char *)(data[row]->data[6]) == '-') strcat(buffer, "_RC");
-	if (!intron) strcat(buffer, "_mRNA");
+	if (rc && *(char *)(data[row]->data[6]) == '-') strcat(buffer, "`RC");
+	if (!intron) strcat(buffer, "`mRNA");
 	buffer = (char *)realloc(buffer, (strlen(buffer) + 1) * sizeof(char));
 	return buffer;
 }
