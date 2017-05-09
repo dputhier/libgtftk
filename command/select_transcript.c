@@ -264,7 +264,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
-	int i;
+	int i, j;
 	INDEX_ID *gid_index;
 
 	/*
@@ -312,9 +312,19 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	 */
 	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
 	for (i = 0; i < row_list->nb_row; i++) {
-		ret->data[i].key = gtf_data->data[row_list->row[i]].key;
-		ret->data[i].value = gtf_data->data[row_list->row[i]].value;
-		ret->data[i].field = gtf_data->data[row_list->row[i]].field;
+		ret->data[i].field = (char **)calloc(8, sizeof(char *));
+		for (j = 0; j < 8; j++)
+			ret->data[i].field[j] = strdup(gtf_data->data[row_list->row[i]].field[j]);
+
+		ret->data[i].key = (char **)calloc(gtf_data->data[row_list->row[i]].nb_attributes, sizeof(char *));
+		ret->data[i].value = (char **)calloc(gtf_data->data[row_list->row[i]].nb_attributes, sizeof(char *));
+		for (j = 0; j < gtf_data->data[row_list->row[i]].nb_attributes; j++) {
+			ret->data[i].key[j] = strdup(gtf_data->data[row_list->row[i]].key[j]);
+			ret->data[i].value[j] = strdup(gtf_data->data[row_list->row[i]].value[j]);
+		}
+		//ret->data[i].key = gtf_data->data[row_list->row[i]].key;
+		//ret->data[i].value = gtf_data->data[row_list->row[i]].value;
+		//ret->data[i].field = gtf_data->data[row_list->row[i]].field;
 		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
 		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
 	}
