@@ -27,8 +27,10 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 			free(row->value);
 		}
 		free(gtf_data->data);
+		gtf_data->data = NULL;
 		free(gtf_data);
 		gtf_data = NULL;
 	}
+	printf(stderr, "%lu\n", gtf_data);
 	return 0;
 }
