@@ -184,9 +184,19 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		j = 0;
 		for (k = 0; k < gtf_data->size; k++) {
 			if (k < row_list->row[j]) {
-				ret->data[n].field = gtf_data->data[k].field;
-				ret->data[n].key = gtf_data->data[k].key;
-				ret->data[n].value = gtf_data->data[k].value;
+
+				ret->data[n].field = (char **)calloc(8, sizeof(char*));
+				for (i = 0; i < 8; i++) ret->data[n].field[i] = strdup(gtf_data->data[k].field[i]);
+				//ret->data[n].field = gtf_data->data[k].field;
+
+				ret->data[n].key = (char **)calloc(gtf_data->data[k].nb_attributes, sizeof(char*));
+				ret->data[n].value = (char **)calloc(gtf_data->data[k].nb_attributes, sizeof(char*));
+				for (i = 0; i < gtf_data->data[k].nb_attributes; i++) {
+					ret->data[n].key[i] = strdup(gtf_data->data[k].key[i]);
+					ret->data[n].value[i] = strdup(gtf_data->data[k].value[i]);
+				}
+				//ret->data[n].key = gtf_data->data[k].key;
+				//ret->data[n].value = gtf_data->data[k].value;
 				ret->data[n].nb_attributes = gtf_data->data[k].nb_attributes;
 				ret->data[n].rank = gtf_data->data[k].rank;
 				n++;
@@ -196,9 +206,19 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		}
 		if (n != ret->size) {
 			for (k = row_list->row[row_list->nb_row - 1] + 1; k < gtf_data->size; k++) {
-				ret->data[n].field = gtf_data->data[k].field;
-				ret->data[n].key = gtf_data->data[k].key;
-				ret->data[n].value = gtf_data->data[k].value;
+
+				ret->data[n].field = (char **)calloc(8, sizeof(char*));
+				for (i = 0; i < 8; i++) ret->data[n].field[i] = strdup(gtf_data->data[k].field[i]);
+				//ret->data[n].field = gtf_data->data[k].field;
+
+				ret->data[n].key = (char **)calloc(gtf_data->data[k].nb_attributes, sizeof(char*));
+				ret->data[n].value = (char **)calloc(gtf_data->data[k].nb_attributes, sizeof(char*));
+				for (i = 0; i < gtf_data->data[k].nb_attributes; i++) {
+					ret->data[n].key[i] = strdup(gtf_data->data[k].key[i]);
+					ret->data[n].value[i] = strdup(gtf_data->data[k].value[i]);
+				}
+				//ret->data[n].key = gtf_data->data[k].key;
+				//ret->data[n].value = gtf_data->data[k].value;
 				ret->data[n].nb_attributes = gtf_data->data[k].nb_attributes;
 				ret->data[n].rank = gtf_data->data[k].rank;
 				n++;
