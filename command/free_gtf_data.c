@@ -29,8 +29,9 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 		free(gtf_data->data);
 		gtf_data->data = NULL;
 		free(gtf_data);
+		fprintf(stderr, "***Before : %lu\n", gtf_data);
 		gtf_data = NULL;
+		fprintf(stderr, "***After : %lu\n", gtf_data);
 	}
-	fprintf(stderr, "*** %lu\n", gtf_data);
 	return 0;
 }
