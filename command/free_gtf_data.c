@@ -16,15 +16,15 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 	if (gtf_data != NULL) {
 		for (i = 0; i < gtf_data->size; i++) {
 			row = &gtf_data->data[i];
-			for (j = 0; j < 8; j++)	free(row->field[j]);
-			free(row->field);
+			//for (j = 0; j < 8; j++)	free(row->field[j]);
+			//free(row->field);
 
 			for (j = 0; j < row->nb_attributes; j++) {
-				free(row->key[j]);
-				free(row->value[j]);
+				//free(row->key[j]);
+				//free(row->value[j]);
 			}
-			free(row->key);
-			free(row->value);
+			//free(row->key);
+			//free(row->value);
 		}
 		free(gtf_data->data);
 		gtf_data->data = NULL;
