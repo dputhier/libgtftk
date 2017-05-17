@@ -257,7 +257,7 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 	ENTRY item, *e;
 	SEQFRAG *seqfrag;
 
-	char **token, *feature;
+	char **token, *feature, *attr;
 	int i, n, nb_exon = 0, tr_len, maxLineSize = 0, pcdna;
 	ROW_LIST *test_row_list = calloc(1, sizeof(ROW_LIST)), **find_row_list;
 	GTF_ROW *row;
@@ -326,12 +326,25 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 				sequence->header = make_header(row, intron, rc);
 
 				/*
+				 * Store the gene id, the transcript id, the gene_name and the
+				 * gene_biotype
+				 */
+				attr = get_attribute_value(row, "gene_id");
+				if (attr != NULL) sequence->gene_id = strdup(attr);
+				attr = get_attribute_value(row, "transcript_id");
+				if (attr != NULL) sequence->transcript_id = strdup(attr);
+				attr = get_attribute_value(row, "gene_name");
+				if (attr != NULL) sequence->gene_name = strdup(attr);
+				attr = get_attribute_value(row, "gene_biotype");
+				if (attr != NULL) sequence->gene_biotype = strdup(attr);
+
+				/*
 				 * save the strand
 				 */
 				sequence->strand = *(row->field[6]);
 
 				/*
-				 * save the start of the transcript
+				 * save the start and the end of the transcript
 				 */
 				sequence->start = atoi(row->field[3]);
 				sequence->end = atoi(row->field[4]);

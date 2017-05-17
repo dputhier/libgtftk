@@ -150,7 +150,7 @@ GTF_DATA *load_GTF(char *input) {
 	return ret;
 }
 
-STRING_LIST *get_attribute_list(GTF_DATA *gtf_data) {
+STRING_LIST *get_all_attributes(GTF_DATA *gtf_data) {
 	int i, j;
 	STRING_LIST *sl = (STRING_LIST *)calloc(1, sizeof(STRING_LIST));
 	char **pkey;

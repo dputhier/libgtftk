@@ -9,12 +9,11 @@
 
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern COLUMN **column;
+extern STRING_LIST *get_all_attributes(GTF_DATA *gtf_data);
 
-int n;
-ROW_LIST *row_list;
 TTEXT *vret;
 
-static void action_row_list(const void *nodep, const VISIT which, const int depth) {
+static void action_list(const void *nodep, const VISIT which, const int depth) {
 	ROW_LIST *datap;
 	char tmp[100];
 
@@ -41,12 +40,7 @@ TTEXT *get_feature_list(GTF_DATA *gtf_data) {
 	/*
 	 * reserve memory for the TTEXT structure to return
 	 */
-	TTEXT *ret = (TTEXT *)calloc(1, sizeof(TTEXT));
-
-	/*
-	 * reserve memory for the local ROW_LIST
-	 */
-	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+	vret = (TTEXT *)calloc(1, sizeof(TTEXT));
 
 	/*
 	 * indexing the GTF_DATA with the feature column
@@ -56,20 +50,77 @@ TTEXT *get_feature_list(GTF_DATA *gtf_data) {
 	/*
 	 * tree browsing of the feature index
 	 */
-	twalk(column[index_id->column]->index[index_id->index_rank].data, action_row_list);
+	twalk(column[index_id->column]->index[index_id->index_rank].data, action_list);
 
-	//ret->size = vret->size;
-	//ret->data = (char ***)calloc(ret->size, sizeof(char **));
-	int i;
-	/*for (i = 0; i < ret->size; i++)	{
-		ret->data[i] = (char **)calloc(2, sizeof(char *));
-		ret->data[i][0] = vret->data[i][0];
-		ret->data[i][1] = vret->data[i][1];
-		//free(vret->data[i]);
-	}*/
-	//free(vret->data);
-	for (i = 0; i < vret->size; i++)
-		fprintf(stderr, "%s : %s\n", vret->data[i][0], vret->data[i][1]);
-	return ret;
+	return vret;
 }
 
+__attribute__ ((visibility ("default")))
+TTEXT *get_seqid_list(GTF_DATA *gtf_data) {
+	/*
+	 * reserve memory for the TTEXT structure to return
+	 */
+	vret = (TTEXT *)calloc(1, sizeof(TTEXT));
+
+	/*
+	 * indexing the GTF_DATA with the seqid column
+	 */
+	INDEX_ID *index_id = index_gtf(gtf_data, "seqid");
+
+	/*
+	 * tree browsing of the feature index
+	 */
+	twalk(column[index_id->column]->index[index_id->index_rank].data, action_list);
+
+	return vret;
+}
+
+__attribute__ ((visibility ("default")))
+TTEXT *get_attribute_list(GTF_DATA *gtf_data) {
+	int i;
+	STRING_LIST *sl = get_all_attributes(gtf_data);
+
+	/*
+	 * reserve memory for the TTEXT structure to return
+	 */
+	vret = (TTEXT *)calloc(1, sizeof(TTEXT));
+
+	/*
+	 * reserve memory for the data table (a list in this case)
+	 */
+	vret->data = (char ***)calloc(sl->nb, sizeof(char **));
+
+	/*
+	 * fill the list-like table
+	 */
+	for (i = 0; i < sl->nb; i++) {
+		vret->data[i] = (char **)calloc(1, sizeof(char *));
+		vret->data[i][0] = strdup(sl->list[i]);
+	}
+	/*
+	 * setup the number of strings
+	 */
+	vret->size = sl->nb;
+
+	return vret;
+}
+
+__attribute__ ((visibility ("default")))
+TTEXT *get_attribute_values_list(GTF_DATA *gtf_data, char *attribute) {
+	/*
+	 * reserve memory for the TTEXT structure to return
+	 */
+	vret = (TTEXT *)calloc(1, sizeof(TTEXT));
+
+	/*
+	 * indexing the GTF_DATA with the provided attribute
+	 */
+	INDEX_ID *index_id = index_gtf(gtf_data, attribute);
+
+	/*
+	 * tree browsing of the feature index
+	 */
+	twalk(column[index_id->column]->index[index_id->index_rank].data, action_list);
+
+	return vret;
+}

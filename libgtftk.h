@@ -237,7 +237,7 @@ typedef struct RAW_DATA {
 
 /*
  * This structure is used to store a list of strings. Useful as a function
- * return type like get_attribute_list in load_gtf.c source file.
+ * return type like get_attribute_list in get_list.c source file.
  */
 typedef struct STRING_LIST {
 	/*
@@ -270,7 +270,7 @@ typedef struct FEATURES {
 } FEATURES;
 
 typedef struct SEQUENCE {
-	char *header, *sequence, strand, *seqid;
+	char *header, *sequence, strand, *seqid, *gene_id, *transcript_id, *gene_name, *gene_biotype;
 	int start, end;
 	FEATURES *features;
 } SEQUENCE;
@@ -303,5 +303,8 @@ int free_raw_data(RAW_DATA *raw_data);
 char *get_memory(long int size);
 int free_mem(char *ptr);
 TTEXT *get_feature_list(GTF_DATA *gtf_data);
+TTEXT *get_seqid_list(GTF_DATA *gtf_data);
+TTEXT *get_attribute_list(GTF_DATA *gtf_data);
+TTEXT *get_attribute_values_list(GTF_DATA *gtf_data, char *attribute);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

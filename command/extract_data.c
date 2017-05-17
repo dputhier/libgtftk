@@ -15,7 +15,7 @@
  * external functions declaration
  */
 extern int split_ip(char ***tab, char *s, char *delim);
-extern STRING_LIST *get_attribute_list(GTF_DATA *gtf_data);
+extern STRING_LIST *get_all_attributes(GTF_DATA *gtf_data);
 extern int is_in_attrs(GTF_ROW *row, char *at);
 
 /*
@@ -78,7 +78,7 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 		/*
 		 * get the list of all attributes in the GTF_DATA
 		 */
-		attributes = get_attribute_list(gtf_data);
+		attributes = get_all_attributes(gtf_data);
 
 		/*
 		 * reserve the memory for the list of column names, in the results

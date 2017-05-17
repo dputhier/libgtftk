@@ -93,9 +93,15 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	 */
 	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
 	for (i = 0; i < row_list->nb_row; i++) {
-		ret->data[i].key = gtf_data->data[row_list->row[i]].key;
-		ret->data[i].value = gtf_data->data[row_list->row[i]].value;
-		ret->data[i].field = gtf_data->data[row_list->row[i]].field;
+		for (k = 0; k < gtf_data->data[row_list->row[i]].nb_attributes; k++) {
+			ret->data[i].key[k] = strdup(gtf_data->data[row_list->row[i]].key[k]);
+			ret->data[i].value[k] = strdup(gtf_data->data[row_list->row[i]].value[k]);
+		}
+		//ret->data[i].key = gtf_data->data[row_list->row[i]].key;
+		//ret->data[i].value = gtf_data->data[row_list->row[i]].value;
+		for (k = 0; k < 8; k++)
+			ret->data[i].field[k] = strdup(gtf_data->data[row_list->row[i]].field[k]);
+		//ret->data[i].field = gtf_data->data[row_list->row[i]].field;
 		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
 		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
 	}
