@@ -307,7 +307,7 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 		 * The main loop on GTF rows
 		 */
 		for (k = 0; k < gtf_data->size; k++) {
-			row = &gtf_data->data[k];
+			row = gtf_data->data[k];
 			/*
 			 * get only transcripts and non coding RNAs (transcripted sequences)
 			 */
@@ -374,7 +374,7 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 						 */
 						nb_exon = 0;
 						for (i = 0; i < (*find_row_list)->nb_row; i++)
-							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]].field[2], "exon"))
+							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->field[2], "exon"))
 								nb_exon++;
 
 						/*
@@ -388,10 +388,10 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 						 */
 						nb_exon = 0;
 						for (i = 0; i < (*find_row_list)->nb_row; i++)
-							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]].field[2], "exon")) {
-								seqfrag[nb_exon].start = atoi(gtf_data->data[(*find_row_list)->row[i]].field[3]);
-								seqfrag[nb_exon].end = atoi(gtf_data->data[(*find_row_list)->row[i]].field[4]);
-								seqfrag[nb_exon].strand = *(gtf_data->data[(*find_row_list)->row[i]].field[6]);
+							if (!strcmp(gtf_data->data[(*find_row_list)->row[i]]->field[2], "exon")) {
+								seqfrag[nb_exon].start = atoi(gtf_data->data[(*find_row_list)->row[i]]->field[3]);
+								seqfrag[nb_exon].end = atoi(gtf_data->data[(*find_row_list)->row[i]]->field[4]);
+								seqfrag[nb_exon].strand = *(gtf_data->data[(*find_row_list)->row[i]]->field[6]);
 								tr_len += seqfrag[nb_exon].end - seqfrag[nb_exon].start + 1;
 								nb_exon++;
 							}
@@ -439,14 +439,14 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 						 */
 						sequence->features = (FEATURES *)calloc(1, sizeof(FEATURES));
 						for (i = 0; i < (*find_row_list)->nb_row; i++) {
-							feature = gtf_data->data[(*find_row_list)->row[i]].field[2];
+							feature = gtf_data->data[(*find_row_list)->row[i]]->field[2];
 							if (strcmp(feature, "transcript") && strcmp(feature, "ncRNA")) {
 								sequence->features->feature = (FEATURE **)realloc(sequence->features->feature, (sequence->features->nb + 1) * sizeof(FEATURE *));
 								feat = sequence->features->feature[sequence->features->nb] = (FEATURE *)calloc(1, sizeof(FEATURE));
 								sequence->features->nb++;
 								feat->name = strdup(feature);
-								feat->start = atoi(gtf_data->data[(*find_row_list)->row[i]].field[3]);
-								feat->end = atoi(gtf_data->data[(*find_row_list)->row[i]].field[4]);
+								feat->start = atoi(gtf_data->data[(*find_row_list)->row[i]]->field[3]);
+								feat->end = atoi(gtf_data->data[(*find_row_list)->row[i]]->field[4]);
 							}
 						}
 

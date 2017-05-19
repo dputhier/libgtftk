@@ -24,6 +24,7 @@ extern int comprow(const void *m1, const void *m2);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
 extern int add_row(int row, ROW_LIST *dst);
+extern int update_row_table(GTF_DATA *gtf_data);
 
 /*
  * global variables declaration
@@ -118,7 +119,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 			for (i = 0; i < datap->nb_row; i++) {
 
 				// the current row
-				row = &gtf_d->data[datap->row[i]];
+				row = gtf_d->data[datap->row[i]];
 
 				// the current feature value
 				feature = row->field[2];
@@ -158,9 +159,9 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 								 * to compute his length
 								 */
 								for (k = 0; k < (*find_row_list)->nb_row; k++) {
-									if (!strcmp(gtf_d->data[(*find_row_list)->row[k]].field[2], "exon")) {
-										start = atoi(gtf_d->data[(*find_row_list)->row[k]].field[3]);
-										end = atoi(gtf_d->data[(*find_row_list)->row[k]].field[4]);
+									if (!strcmp(gtf_d->data[(*find_row_list)->row[k]]->field[2], "exon")) {
+										start = atoi(gtf_d->data[(*find_row_list)->row[k]]->field[3]);
+										end = atoi(gtf_d->data[(*find_row_list)->row[k]]->field[4]);
 										trsize += (end - start + 1);
 									}
 								}
@@ -231,19 +232,19 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 				/*
 				 * we look for the shortest transcript
 				 */
-				test_row_list->token = gtf_d->data[datap->row[min_i]].value[min_j];
+				test_row_list->token = gtf_d->data[datap->row[min_i]]->value[min_j];
 			}
 			else if (tr_type == LONGEST_TRANSCRIPT) {
 				/*
 				 * we look for the longest transcript
 				 */
-				test_row_list->token = gtf_d->data[datap->row[max_i]].value[max_j];
+				test_row_list->token = gtf_d->data[datap->row[max_i]]->value[max_j];
 			}
 			else if (tr_type == MOST5P_TRANSCRIPT) {
 				/*
 				 * we look for the longest transcript
 				 */
-				test_row_list->token = gtf_d->data[datap->row[most_5p_i]].value[most_5p_j];
+				test_row_list->token = gtf_d->data[datap->row[most_5p_i]]->value[most_5p_j];
 			}
 			/*
 			 * get transcript rows
@@ -310,24 +311,27 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
-	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
+	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
+	GTF_ROW *row, *previous_row = NULL;
 	for (i = 0; i < row_list->nb_row; i++) {
-		ret->data[i].field = (char **)calloc(8, sizeof(char *));
+		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+		if (i == 0) ret->data[0] = row;
+		row->field = (char **)calloc(8, sizeof(char *));
 		for (j = 0; j < 8; j++)
-			ret->data[i].field[j] = strdup(gtf_data->data[row_list->row[i]].field[j]);
+			row->field[j] = strdup(gtf_data->data[row_list->row[i]]->field[j]);
 
-		ret->data[i].key = (char **)calloc(gtf_data->data[row_list->row[i]].nb_attributes, sizeof(char *));
-		ret->data[i].value = (char **)calloc(gtf_data->data[row_list->row[i]].nb_attributes, sizeof(char *));
-		for (j = 0; j < gtf_data->data[row_list->row[i]].nb_attributes; j++) {
-			ret->data[i].key[j] = strdup(gtf_data->data[row_list->row[i]].key[j]);
-			ret->data[i].value[j] = strdup(gtf_data->data[row_list->row[i]].value[j]);
+		row->key = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
+		row->value = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
+		for (j = 0; j < gtf_data->data[row_list->row[i]]->nb_attributes; j++) {
+			row->key[j] = strdup(gtf_data->data[row_list->row[i]]->key[j]);
+			row->value[j] = strdup(gtf_data->data[row_list->row[i]]->value[j]);
 		}
-		//ret->data[i].key = gtf_data->data[row_list->row[i]].key;
-		//ret->data[i].value = gtf_data->data[row_list->row[i]].value;
-		//ret->data[i].field = gtf_data->data[row_list->row[i]].field;
-		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
-		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
+		row->nb_attributes = gtf_data->data[row_list->row[i]]->nb_attributes;
+		row->rank = gtf_data->data[row_list->row[i]]->rank;
+		if (i > 0) previous_row->next = row;
+		previous_row = row;
 	}
 	ret->size = row_list->nb_row;
+	update_row_table(ret);
 	return ret;
 }

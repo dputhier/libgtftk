@@ -21,6 +21,7 @@ extern COLUMN **column;
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row(int row, ROW_LIST *dst);
+extern int update_row_table(GTF_DATA *gtf_data);
 
 /*
  * select_by_genomic_location function selects rows in GTF_DATA that match with
@@ -73,8 +74,8 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 				 * For each row, get the start and end values (start and end
 				 * columns are 3rd and 4th columns in GTF format)
 				 */
-				start = atoi(gtf_data->data[(*find_row_list)->row[j]].field[3]);
-				end = atoi(gtf_data->data[(*find_row_list)->row[j]].field[4]);
+				start = atoi(gtf_data->data[(*find_row_list)->row[j]]->field[3]);
+				end = atoi(gtf_data->data[(*find_row_list)->row[j]]->field[4]);
 
 				/*
 				 * If start and end values of the row match with the given
@@ -91,20 +92,23 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
-	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
+	GTF_ROW *row, *previous_row = NULL;
+	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
 	for (i = 0; i < row_list->nb_row; i++) {
-		for (k = 0; k < gtf_data->data[row_list->row[i]].nb_attributes; k++) {
-			ret->data[i].key[k] = strdup(gtf_data->data[row_list->row[i]].key[k]);
-			ret->data[i].value[k] = strdup(gtf_data->data[row_list->row[i]].value[k]);
+		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+		if (i == 0) ret->data[0] = row;
+		for (k = 0; k < gtf_data->data[row_list->row[i]]->nb_attributes; k++) {
+			row->key[k] = strdup(gtf_data->data[row_list->row[i]]->key[k]);
+			row->value[k] = strdup(gtf_data->data[row_list->row[i]]->value[k]);
 		}
-		//ret->data[i].key = gtf_data->data[row_list->row[i]].key;
-		//ret->data[i].value = gtf_data->data[row_list->row[i]].value;
 		for (k = 0; k < 8; k++)
-			ret->data[i].field[k] = strdup(gtf_data->data[row_list->row[i]].field[k]);
-		//ret->data[i].field = gtf_data->data[row_list->row[i]].field;
-		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
-		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
+			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
+		row->rank = gtf_data->data[row_list->row[i]]->rank;
+		row->nb_attributes = gtf_data->data[row_list->row[i]]->nb_attributes;
+		if (i > 0) previous_row->next = row;
+		previous_row = row;
 	}
 	ret->size = row_list->nb_row;
+	update_row_table(ret);
 	return ret;
 }

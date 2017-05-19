@@ -213,7 +213,7 @@ void print_gtf_data(GTF_DATA *gtf_data, char *output) {
 
 	if (*output != '-') out = fopen(output, "w");
 	if (out == NULL) out = stdout;
-	for (i = 0; i < gtf_data->size; i++) print_row(out, &gtf_data->data[i], '\t');
+	for (i = 0; i < gtf_data->size; i++) print_row(out, gtf_data->data[i], '\t');
 	if (out != stdout) {
 		fflush(out);
 		fclose(out);

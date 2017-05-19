@@ -18,6 +18,7 @@
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int comprow(const void *m1, const void *m2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
+extern int update_row_table(GTF_DATA *gtf_data);
 
 /*
  * global variables declaration
@@ -63,7 +64,7 @@ static void action_sbts(const void *nodep, const VISIT which, const int depth) {
 			// computing the size of the transcript (the sum of exon sizes)
 			trsize = 0;
 			for (i = 0; i < datap->nb_row; i++) {
-				row = &gtf_d->data[datap->row[i]];
+				row = gtf_d->data[datap->row[i]];
 				if (!strcmp(row->field[2], "exon"))
 					trsize += (atoi(row->field[4]) - atoi(row->field[3]) + 1);
 			}
@@ -133,20 +134,23 @@ GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max) {
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
-	ret->data = (GTF_ROW *)calloc(row_list->nb_row, sizeof(GTF_ROW));
+	ret->data = (GTF_ROW **)calloc(row_list->nb_row, sizeof(GTF_ROW *));
+	GTF_ROW *row, *previous_row = NULL;
 	for (i = 0; i < row_list->nb_row; i++) {
-		for (k = 0; k < gtf_data->data[row_list->row[i]].nb_attributes; k++) {
-			ret->data[i].key[k] = strdup(gtf_data->data[row_list->row[i]].key[k]);
-			ret->data[i].value[k] = strdup(gtf_data->data[row_list->row[i]].value[k]);
+		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+		if (i == 0) ret->data[0] = row;
+		for (k = 0; k < gtf_data->data[row_list->row[i]]->nb_attributes; k++) {
+			row->key[k] = strdup(gtf_data->data[row_list->row[i]]->key[k]);
+			row->value[k] = strdup(gtf_data->data[row_list->row[i]]->value[k]);
 		}
-		//ret->data[i].key = gtf_data->data[row_list->row[i]].key;
-		//ret->data[i].value = gtf_data->data[row_list->row[i]].value;
 		for (k = 0; k < 8; k++)
-			ret->data[i].field[k] = strdup(gtf_data->data[row_list->row[i]].field[k]);
-		//ret->data[i].field = gtf_data->data[row_list->row[i]].field;
-		ret->data[i].nb_attributes = gtf_data->data[row_list->row[i]].nb_attributes;
-		ret->data[i].rank = gtf_data->data[row_list->row[i]].rank;
+			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
+		row->nb_attributes = gtf_data->data[row_list->row[i]]->nb_attributes;
+		row->rank = gtf_data->data[row_list->row[i]]->rank;
+		if (i > 0) previous_row->next = row;
+		previous_row = row;
 	}
 	ret->size = row_list->nb_row;
+	update_row_table(ret);
 	return ret;
 }

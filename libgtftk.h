@@ -92,6 +92,12 @@ typedef struct GTF_ROW {
 	 * the rank number of the row in the GTF file
 	 */
 	int rank;
+
+	/*
+	 * the link to the next row
+	 */
+	struct GTF_ROW *next;
+
 } GTF_ROW;
 
 /*
@@ -112,7 +118,7 @@ typedef struct GTF_DATA {
 	/*
 	 * a table of rows
 	 */
-	GTF_ROW *data;
+	GTF_ROW **data;
 } GTF_DATA;
 
 /*
@@ -196,7 +202,7 @@ typedef struct COLUMN {
 typedef struct ROW_LIST {
 	/*
 	 * the token that is contained in the rows. For example, this can be "gene"
-	 * or "transcript" for an index on the column feGTF_DATA *select_transcript(GTF_DATA *gtf_data, int type)ature, or "protein_coding"
+	 * or "transcript" for an index on the column feature, or "protein_coding"
 	 * and "lincRNA" for an index on the attribute "gene_biotype".
 	 */
 	char *token;
@@ -306,5 +312,6 @@ TTEXT *get_feature_list(GTF_DATA *gtf_data);
 TTEXT *get_seqid_list(GTF_DATA *gtf_data);
 TTEXT *get_attribute_list(GTF_DATA *gtf_data);
 TTEXT *get_attribute_values_list(GTF_DATA *gtf_data, char *attribute);
+GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

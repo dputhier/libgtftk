@@ -129,7 +129,7 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 				/*
 				 * do a copy of the field, as it may be altered
 				 */
-				ret->data[k][i] = strdup(gtf_data->data[k].field[n]);
+				ret->data[k][i] = strdup(gtf_data->data[k]->field[n]);
 
 				/*
 				 * if we want data 0-based, we must remove 1 from the start
@@ -145,7 +145,7 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 			 * attribute extraction
 			 */
 			else if ((n = is_in_attrs(&gtf_data->data[k], ret->column_name[i])) != -1)
-				ret->data[k][i] = strdup(gtf_data->data[k].value[n]);
+				ret->data[k][i] = strdup(gtf_data->data[k]->value[n]);
 
 			/*
 			 * not a column and not an attribute ! (some attributes are not

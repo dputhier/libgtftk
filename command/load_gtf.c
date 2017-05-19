@@ -53,6 +53,19 @@ int compatt(const void *s1, const void *s2) {
 	return strcmp(cs1, cs2);
 }
 
+int update_row_table(GTF_DATA *gtf_data) {
+	GTF_ROW *row = gtf_data->data[0];
+	int i;
+
+	gtf_data->data = (GTF_ROW **)realloc(gtf_data->data, gtf_data->size * sizeof(GTF_ROW *));
+	for (i = 0; i < gtf_data->size; i++) {
+		gtf_data->data[i] = row;
+		row = row->next;
+	}
+	return 0;
+}
+
+
 /*
  * This function read GTF data from a GTF file (gzipped or not) or standard
  * input and makes a GTF_DATA object that contains all the GTF file data.
@@ -81,7 +94,10 @@ GTF_DATA *load_GTF(char *input) {
 	// reserve memory for the GTF_DATA structure to return
 	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
 
-	GTF_ROW *row;
+	// reserve memory for one row in the table.
+	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
+
+	GTF_ROW *row, *previous_row;
 
 	// make the GTF column model
 	make_columns();
@@ -95,13 +111,15 @@ GTF_DATA *load_GTF(char *input) {
 			*(buffer + strlen(buffer) - 1) = 0;
 
 			// reserve memory for a new row in the row table
-			ret->data = (GTF_ROW *)realloc(ret->data, (nb_row + 1) * sizeof(GTF_ROW));
+			row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+			if (nb_row == 0) ret->data[0] = row;
+			//ret->data = (GTF_ROW *)realloc(ret->data, (nb_row + 1) * sizeof(GTF_ROW));
 
 			/*
 			 * reserve memory for the new row; this row variable is used to
 			 * improve readability of the code
 			 */
-			row = ret->data + nb_row;
+			//row = ret->data + nb_row;
 
 			// split the row and check the number of fields (should be 9)
 			if (split_ip(&token, buffer, "\t") != nb_column) {
@@ -132,6 +150,11 @@ GTF_DATA *load_GTF(char *input) {
 			// keep the rank number of the row
 			row->rank = nb_row;
 
+			// insert the new row in the list
+			//if (nb_row > 0) (ret->data + nb_row - 1)->next = row;
+			if (nb_row > 0) previous_row->next = row;
+			previous_row = row;
+
 			// one more row has been read
 			nb_row++;
 
@@ -141,11 +164,14 @@ GTF_DATA *load_GTF(char *input) {
 		}
 	}
 
-	// free the buffer used to read GTF file
-	free(buffer);
-
 	// store the final number of rows
 	ret->size = nb_row;
+
+	// update the row tlist
+	update_row_table(ret);
+
+	// free the buffer used to read GTF file
+	free(buffer);
 
 	return ret;
 }
@@ -157,7 +183,7 @@ STRING_LIST *get_all_attributes(GTF_DATA *gtf_data) {
 	GTF_ROW *row;
 
 	for (j = 0; j < gtf_data->size; j++) {
-		row = &gtf_data->data[j];
+		row = gtf_data->data[j];
 		for (i = 0; i < row->nb_attributes; i++) {
 			pkey = &row->key[i];
 			if (!lfind(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt)) {
@@ -236,11 +262,11 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key, int *index_rank) {
 	if (index_id->index_rank == -1) {
 		//fprintf(stderr, "NULL index for %s\n", key);
 		make_index(&index_id, key);
-		//fprintf(stderr, "coucoucou : %s %d\n", column[index_id->column]->index[index_id->index_rank]->key, column[index_id->column]->nb_index);
+		//fprintf(stderr, "coucoucou : %s %d\n", column[index_id->column]->index[index_id->index_rank].key, column[index_id->column]->nb_index);
 		if (index_id->column != 8) {
 			for (k = 0; k < gtf_data->size; k++) {
-				//fprintf(stderr, "indexing : %d %s ... ", k, gtf_data->data[k].field[i]);
-				index_row(k, gtf_data->data[k].field[index_id->column], column[index_id->column]->index + index_id->index_rank);
+				//fprintf(stderr, "indexing : %d %s ... ", k, gtf_data->data[k]->field[index_id->column]);
+				index_row(k, gtf_data->data[k]->field[index_id->column], column[index_id->column]->index + index_id->index_rank);
 				//fprintf(stderr, "done.\n");
 			}
 			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
@@ -248,9 +274,9 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key, int *index_rank) {
 		else {
 			//i = add_index(key, gtf_data);
 			for (k = 0; k < gtf_data->size; k++)
-				for (j = 0; j < gtf_data->data[k].nb_attributes; j++)
-					if (!strcmp(key, gtf_data->data[k].key[j])) {
-						index_row(k, gtf_data->data[k].value[j], column[index_id->column]->index + index_id->index_rank);
+				for (j = 0; j < gtf_data->data[k]->nb_attributes; j++)
+					if (!strcmp(key, gtf_data->data[k]->key[j])) {
+						index_row(k, gtf_data->data[k]->value[j], column[index_id->column]->index + index_id->index_rank);
 						break;
 					}
 			//i += 8;
@@ -290,7 +316,7 @@ int index_gtf_old(GTF_DATA *gtf_data, char *key) {
 			 */
 			if (column[i]->index->data == NULL)
 				for (k = 0; k < gtf_data->size; k++)
-					index_row(k, gtf_data->data[k].field[i], column[i]->index);
+					index_row(k, gtf_data->data[k]->field[i], column[i]->index);
 			found = 1;
 			break;
 		}
@@ -318,9 +344,9 @@ int index_gtf_old(GTF_DATA *gtf_data, char *key) {
 			 * row in the attribute key index
 			 */
 			for (k = 0; k < gtf_data->size; k++)
-				for (j = 0; j < gtf_data->data[k].nb_attributes; j++)
-					if (!strcmp(key, gtf_data->data[k].key[j])) {
-						index_row(k, gtf_data->data[k].value[j], column[8]->index + i);
+				for (j = 0; j < gtf_data->data[k]->nb_attributes; j++)
+					if (!strcmp(key, gtf_data->data[k]->key[j])) {
+						index_row(k, gtf_data->data[k]->value[j], column[8]->index + i);
 						break;
 					}
 
