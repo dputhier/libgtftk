@@ -210,13 +210,6 @@ FILE *get_fasta_file_index(FILE *fasta_file, char *index) {
 	return ffi;
 }
 
-char *get_attribute_value(GTF_ROW *row, char *attr) {
-	int k = is_in_attrs(row, attr);
-
-	if (k != -1) return row->value[k];
-	return NULL;
-}
-
 void print_fasta_sequence(SEQUENCE *seq) {
 	int k;
 	FEATURE *feat;

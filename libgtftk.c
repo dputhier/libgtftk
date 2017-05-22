@@ -268,6 +268,13 @@ int is_in_attrs(GTF_ROW *row, char *at) {
 	return ret;
 }
 
+char *get_attribute_value(GTF_ROW *row, char *attr) {
+	int k = is_in_attrs(row, attr);
+
+	if (k != -1) return row->value[k];
+	return NULL;
+}
+
 __attribute__ ((visibility ("default")))
 char *get_memory(long int size) {
 	int i;
