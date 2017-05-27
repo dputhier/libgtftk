@@ -96,6 +96,9 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
 	for (i = 0; i < row_list->nb_row; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+		row->key = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
+		row->value = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
+		row->field = (char **)calloc(8, sizeof(char *));
 		if (i == 0) ret->data[0] = row;
 		for (k = 0; k < gtf_data->data[row_list->row[i]]->nb_attributes; k++) {
 			row->key[k] = strdup(gtf_data->data[row_list->row[i]]->key[k]);

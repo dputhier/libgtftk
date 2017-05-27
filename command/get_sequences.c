@@ -11,6 +11,7 @@ extern int split_ip(char ***tab, char *s, char *delim);
 extern int compare_row_list(const void *p1, const void *p2);
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int is_in_attrs(GTF_ROW *row, char *at);
+extern char *get_attribute_value(GTF_ROW *row, char *attr);
 
 extern COLUMN **column;
 

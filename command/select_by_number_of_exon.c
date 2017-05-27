@@ -127,6 +127,9 @@ GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max) {
 	GTF_ROW *row, *previous_row = NULL;
 	for (i = 0; i < row_list->nb_row; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+		row->key = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
+		row->value = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
+		row->field = (char **)calloc(8, sizeof(char *));
 		if (i == 0) ret->data[0] = row;
 		for (k = 0; k < 8; k++)
 			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
