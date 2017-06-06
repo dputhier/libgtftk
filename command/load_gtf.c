@@ -53,6 +53,19 @@ int compatt(const void *s1, const void *s2) {
 	return strcmp(cs1, cs2);
 }
 
+/*
+ * In a GTF_DATA, the rows are stored in two manners: a linked list and a table.
+ * The linked list is usefull for adding rows (ie convert_to_ensembl function)
+ * while the table is quicker to address a particular row.
+ * After some operations, the rows can be stored only in the linked list (a
+ * pointer on the first row is stored in gtf_data->data[0]). This function
+ * rebuild the corresponding table in gtf_data->data from the linked list.
+ *
+ * Parameters:
+ * 		gtf_data:	the input GTF data
+ *
+ * Returns:			0 if success
+ */
 int update_row_table(GTF_DATA *gtf_data) {
 	GTF_ROW *row = gtf_data->data[0];
 	int i;
@@ -65,6 +78,35 @@ int update_row_table(GTF_DATA *gtf_data) {
 	return 0;
 }
 
+/*
+ * The symetric function of update_row_table. This function rebuild the linked
+ * list from the table in gtf_data->data.
+ *
+ * Parameters:
+ * 		gtf_data:	the input GTF data
+ *
+ * Returns:			0 if success
+ */
+int update_linked_list(GTF_DATA *gtf_data) {
+	int i, j;
+	GTF_ROW *row;
+
+	for (i = 0; i < gtf_data->size - 1; i++)
+		if (gtf_data->data[i]->next != gtf_data->data[i + 1]) {
+			row = gtf_data->data[i]->next;
+			for (j = 0; j < 8; j++) free(row->field[j]);
+			free(row->field);
+			for (j = 0; j < row->nb_attributes; j++) {
+				free(row->key[j]);
+				free(row->value[j]);
+			}
+			free(row->key);
+			free(row->value);
+			free(row);
+			gtf_data->data[i]->next = gtf_data->data[i + 1];
+		}
+	return 0;
+}
 
 /*
  * This function read GTF data from a GTF file (gzipped or not) or standard
@@ -110,7 +152,7 @@ GTF_DATA *load_GTF(char *input) {
 		if (*buffer != '#') {
 			*(buffer + strlen(buffer) - 1) = 0;
 
-			// reserve memory for a new row in the row table
+			// reserve memory for a new row in the row list
 			row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 			if (nb_row == 0) ret->data[0] = row;
 			//ret->data = (GTF_ROW *)realloc(ret->data, (nb_row + 1) * sizeof(GTF_ROW));
