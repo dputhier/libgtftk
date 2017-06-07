@@ -91,8 +91,8 @@ int update_linked_list(GTF_DATA *gtf_data) {
 	int i, j;
 	GTF_ROW *row;
 
-	for (i = 0; i < gtf_data->size - 1; i++)
-		if (gtf_data->data[i]->next != gtf_data->data[i + 1]) {
+	for (i = 0; i < gtf_data->size - 1; i++) {
+		if ((gtf_data->data[i]->next != NULL) && (gtf_data->data[i]->next != gtf_data->data[i + 1])) {
 			row = gtf_data->data[i]->next;
 			for (j = 0; j < 8; j++) free(row->field[j]);
 			free(row->field);
@@ -103,8 +103,10 @@ int update_linked_list(GTF_DATA *gtf_data) {
 			free(row->key);
 			free(row->value);
 			free(row);
-			gtf_data->data[i]->next = gtf_data->data[i + 1];
+
 		}
+		gtf_data->data[i]->next = gtf_data->data[i + 1];
+	}
 	return 0;
 }
 

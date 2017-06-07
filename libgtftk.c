@@ -289,6 +289,31 @@ int free_mem(char *ptr) {
 	return 0;
 }
 
+GTF_DATA *clone(GTF_DATA *gtf_data) {
+	int i, j;
+	GTF_ROW *row;
+	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
+	ret->size = gtf_data->size;
+	ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
+	for (i = 0; i < ret->size; i++) {
+		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+		ret->data[i] = row;
+		row->rank = gtf_data->data[i]->rank;
+		row->nb_attributes = gtf_data->data[i]->nb_attributes;
+
+		row->field = (char **)calloc(8, sizeof(char*));
+		for (j = 0; j < 8; j++) row->field[j] = strdup(gtf_data->data[i]->field[j]);
+
+		row->value = (char **)calloc(gtf_data->data[i]->nb_attributes, sizeof(char*));
+		for (j = 0; j < gtf_data->data[i]->nb_attributes; j++) row->value[j] = strdup(gtf_data->data[i]->value[j]);
+
+		row->key = (char **)calloc(gtf_data->data[i]->nb_attributes, sizeof(char*));
+		for (j = 0; j < gtf_data->data[i]->nb_attributes; j++) row->key[j] = strdup(gtf_data->data[i]->key[j]);
+	}
+	update_linked_list(ret);
+	return ret;
+}
+
 /*__attribute__ ((visibility ("default")))
 TAB_RESULT *get_attribute_list_lib(char *gtf_filename) {
 	char *buffer;
