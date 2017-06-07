@@ -69,41 +69,50 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 					// the current feature value
 					feature = row->field[2];
 
-					if (!strcmp(feature, "exon")) {
-						k = atoi(row->field[3]);
-						if (k < start) start = k;
-						k = atoi(row->field[4]);
-						if (k > end) end = k;
-						if (!ok) {
+					k = atoi(row->field[3]);
+					if (k < start) start = k;
+					k = atoi(row->field[4]);
+					if (k > end) end = k;
+
+					if (!ok)
+						if (!strcmp(feature, "exon")) {
 							for (k = 0; k < row->nb_attributes; k++)
 								if (strncmp(row->key[k], "exon", 4))
 									tr_row->nb_attributes++;
 							tr_row->key = (char **)calloc(tr_row->nb_attributes, sizeof(char *));
 							tr_row->value = (char **)calloc(tr_row->nb_attributes, sizeof(char *));
 							na = 0;
-							for (k = 0; k < row->nb_attributes; k++) {
+							for (k = 0; k < row->nb_attributes; k++)
 								if (strncmp(row->key[k], "exon", 4)) {
 									tr_row->key[na] = strdup(row->key[k]);
 									tr_row->value[na] = strdup(row->value[k]);
 									na++;
 								}
-							}
 							tr_row->field[0] = strdup(row->field[0]);
-							tr_row->field[1] = strdup(row->field[1]);
+							tr_row->field[1] = get_attribute_value(row, "transcript_source");
+							if (tr_row->field[1] == NULL) tr_row->field[1] = strdup(row->field[1]);
 							tr_row->field[2] = strdup("transcript");
-							asprintf(&(tr_row->field[3]), "%d", start);
-							asprintf(&(tr_row->field[4]), "%d", end);
 							tr_row->field[5] = strdup(row->field[5]);
 							tr_row->field[6] = strdup(row->field[6]);
 							tr_row->field[7] = strdup(row->field[7]);
 							ok = 1;
 							nbrow++;
 						}
-					}
 				}
-				if (datap->row[0] != 0)	gtf_d->data[datap->row[0] - 1]->next = tr_row;
-				tr_row->next = gtf_d->data[datap->row[0]];
-				if (datap->row[0] == 0) gtf_d->data[0] = tr_row;
+				asprintf(&(tr_row->field[3]), "%d", start);
+				asprintf(&(tr_row->field[4]), "%d", end);
+
+				if (!strcmp(gtf_d->data[datap->row[0]]->field[2], "gene")) {
+					tr_row->next = gtf_d->data[datap->row[1]];
+					gtf_d->data[datap->row[0]]->next = tr_row;
+				}
+				else {
+					tr_row->next = gtf_d->data[datap->row[0]];
+					if (datap->row[0] != 0)
+						gtf_d->data[datap->row[0] - 1]->next = tr_row;
+					else
+						gtf_d->data[0] = tr_row;
+				}
 			}
 			n++;
 			break;
@@ -115,7 +124,7 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 static void action_gene(const void *nodep, const VISIT which, const int depth) {
 	int i, ok, start, end, k, na;
 	char *feature;
-	GTF_ROW *row, *g_row, *p_row;
+	GTF_ROW *row, *g_row;
 
 	// the row list of the current gene
 	ROW_LIST *datap = *((ROW_LIST **)nodep);
@@ -154,11 +163,12 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 					// the current feature value
 					feature = row->field[2];
 
+					k = atoi(row->field[3]);
+					if (k < start) start = k;
+					k = atoi(row->field[4]);
+					if (k > end) end = k;
+
 					if (!strcmp(feature, "exon") || !strcmp(feature, "transcript")) {
-						k = atoi(row->field[3]);
-						if (k < start) start = k;
-						k = atoi(row->field[4]);
-						if (k > end) end = k;
 						if (!ok) {
 							for (k = 0; k < row->nb_attributes; k++)
 								if (!strncmp(row->key[k], "gene", 4) || strstr(row->key[k], "_gene_") ||
@@ -176,10 +186,9 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 								}
 							}
 							g_row->field[0] = strdup(row->field[0]);
-							g_row->field[1] = strdup(row->field[1]);
+							g_row->field[1] = get_attribute_value(row, "gene_source");
+							if (g_row->field[1] == NULL) g_row->field[1] = strdup(row->field[1]);
 							g_row->field[2] = strdup("gene");
-							asprintf(&(g_row->field[3]), "%d", start);
-							asprintf(&(g_row->field[4]), "%d", end);
 							g_row->field[5] = strdup(row->field[5]);
 							g_row->field[6] = strdup(row->field[6]);
 							g_row->field[7] = strdup(row->field[7]);
@@ -188,6 +197,9 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 						}
 					}
 				}
+				asprintf(&(g_row->field[3]), "%d", start);
+				asprintf(&(g_row->field[4]), "%d", end);
+
 				if (datap->row[0] != 0)	gtf_d->data[datap->row[0] - 1]->next = g_row;
 				g_row->next = gtf_d->data[datap->row[0]];
 				if (datap->row[0] == 0)	gtf_d->data[0] = g_row;
