@@ -314,5 +314,6 @@ TTEXT *get_attribute_list(GTF_DATA *gtf_data);
 TTEXT *get_attribute_values_list(GTF_DATA *gtf_data, char *attribute);
 GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data);
 GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *new_key, char *inputfile_name);
+GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */
