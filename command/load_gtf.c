@@ -96,14 +96,13 @@ int update_linked_list(GTF_DATA *gtf_data) {
 			row = gtf_data->data[i]->next;
 			for (j = 0; j < 8; j++) free(row->field[j]);
 			free(row->field);
-			for (j = 0; j < row->nb_attributes; j++) {
-				free(row->key[j]);
-				free(row->value[j]);
+			for (j = 0; j < row->attributes.nb; j++) {
+				free(row->attributes.attr[j]->key);
+				free(row->attributes.attr[j]->value);
+				free(row->attributes.attr[j]);
 			}
-			free(row->key);
-			free(row->value);
+			free(row->attributes.attr);
 			free(row);
-
 		}
 		gtf_data->data[i]->next = gtf_data->data[i + 1];
 	}
@@ -181,15 +180,16 @@ GTF_DATA *load_GTF(char *input) {
 			for (i = 0; i < 8; i++) row->field[i] = strdup(token[i]);
 
 			// split the attributes
-			row->nb_attributes = split_ip(&attr, token[8], ";");
+			row->attributes.nb = split_ip(&attr, token[8], ";");
 
 			// reserve memory for the attributes
-			row->key = (char **)calloc(row->nb_attributes, sizeof(char *));
-			row->value = (char **)calloc(row->nb_attributes, sizeof(char *));
+			row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
 
 			// store the attributes
-			for (i = 0; i < row->nb_attributes; i++)
-				split_key_value(attr[i], &row->key[i], &row->value[i]);
+			for (i = 0; i < row->attributes.nb; i++) {
+				row->attributes.attr[i] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+				split_key_value(attr[i], &(row->attributes.attr[i]->key), &(row->attributes.attr[i]->value));
+			}
 
 			// keep the rank number of the row
 			row->rank = nb_row;
@@ -228,8 +228,8 @@ STRING_LIST *get_all_attributes(GTF_DATA *gtf_data) {
 
 	for (j = 0; j < gtf_data->size; j++) {
 		row = gtf_data->data[j];
-		for (i = 0; i < row->nb_attributes; i++) {
-			pkey = &row->key[i];
+		for (i = 0; i < row->attributes.nb; i++) {
+			pkey = &(row->attributes.attr[i]->key);
 			if (!lfind(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt)) {
 				sl->list = (char **)realloc(sl->list, (sl->nb + 1) * sizeof(char *));
 				lsearch(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt);
@@ -304,101 +304,22 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key, int *index_rank) {
 	INDEX_ID *index_id = get_index(gtf_data, key);
 
 	if (index_id->index_rank == -1) {
-		//fprintf(stderr, "NULL index for %s\n", key);
 		make_index(&index_id, key);
-		//fprintf(stderr, "coucoucou : %s %d\n", column[index_id->column]->index[index_id->index_rank].key, column[index_id->column]->nb_index);
 		if (index_id->column != 8) {
-			for (k = 0; k < gtf_data->size; k++) {
-				//fprintf(stderr, "indexing : %d %s ... ", k, gtf_data->data[k]->field[index_id->column]);
+			for (k = 0; k < gtf_data->size; k++)
 				index_row(k, gtf_data->data[k]->field[index_id->column], column[index_id->column]->index + index_id->index_rank);
-				//fprintf(stderr, "done.\n");
-			}
 			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
 		}
 		else {
-			//i = add_index(key, gtf_data);
 			for (k = 0; k < gtf_data->size; k++)
-				for (j = 0; j < gtf_data->data[k]->nb_attributes; j++)
-					if (!strcmp(key, gtf_data->data[k]->key[j])) {
-						index_row(k, gtf_data->data[k]->value[j], column[index_id->column]->index + index_id->index_rank);
+				for (j = 0; j < gtf_data->data[k]->attributes.nb; j++)
+					if (!strcmp(key, gtf_data->data[k]->attributes.attr[j]->key)) {
+						index_row(k, gtf_data->data[k]->attributes.attr[j]->value, column[index_id->column]->index + index_id->index_rank);
 						break;
 					}
-			//i += 8;
 			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
 		}
 	}
 
-	//fprintf(stderr, "i = %d\n", i);
 	return index_id;
-}
-
-/*
- * Indexes a GTF_DATA with a column name or an attribute name. The return value
- * is the rank of the column for a column name index or the rank of the
- * attribute index in the index table of the column + 8. So, a return value
- * greater than 7 means that data has been indexed on an attribute name.
- *
- * Parameters:
- * 		gtf_data:	the GTF_DATA to index
- * 		key:		the column name or attribute name
- *
- * Returns:			the column rank (0-7) or the attribute index rank + 8
- */
-int index_gtf_old(GTF_DATA *gtf_data, char *key) {
-	int i, j, k, found;
-
-	found = 0;
-
-	/*
-	 * look for key in the 8 first column names and index the column if found
-	 */
-	for (i = 0; i < (nb_column - 1); i++)
-		if (!strcmp(column[i]->name, key)) {
-			/*
-			 * if an index on this column doesn't exist, we create it by
-			 * indexing each row of the GTF data
-			 */
-			if (column[i]->index->data == NULL)
-				for (k = 0; k < gtf_data->size; k++)
-					index_row(k, gtf_data->data[k]->field[i], column[i]->index);
-			found = 1;
-			break;
-		}
-	if (!found) {
-		/*
-		 * key is not a column name so look for key in the attribute index
-		 * table
-		 */
-		for (i = 0; i < column[8]->nb_index; i++)
-			if (!strcmp(column[8]->index[i].key, key)) {
-				found = 1;
-				break;
-			}
-
-		/*
-		 * if there is no index for key, we need to make one and add it in the
-		 * table
-		 */
-		if (!found) {
-			i = add_index(key, gtf_data);
-
-			/*
-			 * Now we have an index for key and i is his rank. We can parse the
-			 * GTF_DATA, look for key attribute in each row, and if found, add the
-			 * row in the attribute key index
-			 */
-			for (k = 0; k < gtf_data->size; k++)
-				for (j = 0; j < gtf_data->data[k]->nb_attributes; j++)
-					if (!strcmp(key, gtf_data->data[k]->key[j])) {
-						index_row(k, gtf_data->data[k]->value[j], column[8]->index + i);
-						break;
-					}
-
-		}
-		/*
-		 * add 8 to rank for an attribute name index
-		 */
-		i += 8;
-	}
-	return i;
 }

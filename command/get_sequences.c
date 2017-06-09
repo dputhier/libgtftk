@@ -40,7 +40,7 @@ void print_attribute(GTF_ROW *row, char *attr, char *output, char delim) {
 	int k = is_in_attrs(row, attr);
 
 	if (k != -1)
-		delim != 0 ? sprintf(output, "%s%c", row->value[k], delim) : sprintf(output, "%s", row->value[k]);
+		delim != 0 ? sprintf(output, "%s%c", row->attributes.attr[k]->value, delim) : sprintf(output, "%s", row->attributes.attr[k]->value);
 	else
 		delim != 0 ? sprintf(output, "NA%c", delim) : sprintf(output, "NA");
 }

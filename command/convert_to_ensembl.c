@@ -16,8 +16,8 @@
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern char *get_attribute_value(GTF_ROW *row, char *attr);
 extern int update_row_table(GTF_DATA *gtf_data);
-extern int update_linked_list(GTF_DATA *gtf_data);
-//extern void print_row(FILE *output, GTF_ROW *r, char delim);
+extern void add_attribute(GTF_ROW *row, char *key, char *value);
+extern GTF_DATA *clone(GTF_DATA *gtf_data);
 
 /*
  * global variables declaration
@@ -28,7 +28,7 @@ int n, nbrow;
 GTF_DATA *gtf_d;
 
 static void action_transcript(const void *nodep, const VISIT which, const int depth) {
-	int i, ok, start, end, k, na;
+	int i, ok, start, end, k;
 	char *feature;
 	GTF_ROW *row, *tr_row;
 
@@ -76,18 +76,9 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 
 					if (!ok)
 						if (!strcmp(feature, "exon")) {
-							for (k = 0; k < row->nb_attributes; k++)
-								if (strncmp(row->key[k], "exon", 4))
-									tr_row->nb_attributes++;
-							tr_row->key = (char **)calloc(tr_row->nb_attributes, sizeof(char *));
-							tr_row->value = (char **)calloc(tr_row->nb_attributes, sizeof(char *));
-							na = 0;
-							for (k = 0; k < row->nb_attributes; k++)
-								if (strncmp(row->key[k], "exon", 4)) {
-									tr_row->key[na] = strdup(row->key[k]);
-									tr_row->value[na] = strdup(row->value[k]);
-									na++;
-								}
+							for (k = 0; k < row->attributes.nb; k++)
+								if (strncmp(row->attributes.attr[k]->key, "exon", 4))
+									add_attribute(tr_row, row->attributes.attr[k]->key, row->attributes.attr[k]->value);
 							tr_row->field[0] = strdup(row->field[0]);
 							tr_row->field[1] = get_attribute_value(row, "transcript_source");
 							if (tr_row->field[1] == NULL) tr_row->field[1] = strdup(row->field[1]);
@@ -122,7 +113,7 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 }
 
 static void action_gene(const void *nodep, const VISIT which, const int depth) {
-	int i, ok, start, end, k, na;
+	int i, ok, start, end, k;
 	char *feature;
 	GTF_ROW *row, *g_row;
 
@@ -170,21 +161,11 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 
 					if (!strcmp(feature, "exon") || !strcmp(feature, "transcript")) {
 						if (!ok) {
-							for (k = 0; k < row->nb_attributes; k++)
-								if (!strncmp(row->key[k], "gene", 4) || strstr(row->key[k], "_gene_") ||
-									!strncmp(row->key[k] + strlen(row->key[k]) - 5, "_gene", 5))
-									g_row->nb_attributes++;
-							g_row->key = (char **)calloc(g_row->nb_attributes, sizeof(char *));
-							g_row->value = (char **)calloc(g_row->nb_attributes, sizeof(char *));
-							na = 0;
-							for (k = 0; k < row->nb_attributes; k++) {
-								if (!strncmp(row->key[k], "gene", 4) || strstr(row->key[k], "_gene_") ||
-									!strncmp(row->key[k] + strlen(row->key[k]) - 5, "_gene", 5)) {
-									g_row->key[na] = strdup(row->key[k]);
-									g_row->value[na] = strdup(row->value[k]);
-									na++;
-								}
-							}
+							for (k = 0; k < row->attributes.nb; k++)
+								if (!strncmp(row->attributes.attr[k]->key, "gene", 4) ||
+										strstr(row->attributes.attr[k]->key, "_gene_") ||
+										!strncmp(row->attributes.attr[k]->key + strlen(row->attributes.attr[k]->key) - 5, "_gene", 5))
+									add_attribute(g_row, row->attributes.attr[k]->key, row->attributes.attr[k]->value);
 							g_row->field[0] = strdup(row->field[0]);
 							g_row->field[1] = get_attribute_value(row, "gene_source");
 							if (g_row->field[1] == NULL) g_row->field[1] = strdup(row->field[1]);
@@ -213,85 +194,39 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
-	int j, r;
 	/*
 	 * reserve memory for the GTF_DATA structure to return
 	 */
-	GTF_DATA *inter = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
-	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
+	GTF_DATA *ret = clone(gtf_data);
 
 	/*
 	 * indexing the gtf with transcript_id
 	 */
-	tid_index = index_gtf(gtf_data, "transcript_id");
+	tid_index = index_gtf(ret, "transcript_id");
 
 	/*
 	 * tree browsing of the transcript_id index (rank 0)
 	 */
-	gtf_d = gtf_data;
+	gtf_d = ret;
 	n = nbrow = 0;
 	twalk(column[tid_index->column]->index[tid_index->index_rank].data, action_transcript);
 
-	inter->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
-	GTF_ROW *row = gtf_d->data[0], *new_row, *previous_row = NULL;
-	r = 0;
-	while (row != NULL) {
-		new_row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-		if (previous_row == NULL) inter->data[0] = new_row;
-		new_row->field = (char **)calloc(8, sizeof(char *));
-		for (j = 0; j < 8; j++) new_row->field[j] = strdup(row->field[j]);
-		new_row->key = (char **)calloc(row->nb_attributes, sizeof(char *));
-		new_row->value = (char **)calloc(row->nb_attributes, sizeof(char *));
-		for (j = 0; j < row->nb_attributes; j++) {
-			new_row->key[j] = strdup(row->key[j]);
-			new_row->value[j] = strdup(row->value[j]);
-		}
-		new_row->nb_attributes = row->nb_attributes;
-		new_row->rank = r++;
-		if (previous_row != NULL) previous_row->next = new_row;
-		previous_row = new_row;
-		row = row->next;
-	}
-	inter->size = nbrow + gtf_d->size;
-	update_row_table(inter);
-	update_linked_list(gtf_data);
+	ret->size = nbrow + ret->size;
+	update_row_table(ret);
 
 	/*
 	 * indexing the gtf with gene_id
 	 */
-	gid_index = index_gtf(inter, "gene_id");
+	gid_index = index_gtf(ret, "gene_id");
 
 	/*
 	 * tree browsing of the gene_id index (rank 1)
 	 */
-	gtf_d = inter;
 	n = nbrow = 0;
 	twalk(column[gid_index->column]->index[gid_index->index_rank].data, action_gene);
 
-	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
-	row = inter->data[0];
-	previous_row = NULL;
-	r = 0;
-	while (row != NULL) {
-		new_row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-		if (previous_row == NULL) ret->data[0] = new_row;
-		new_row->field = (char **)calloc(8, sizeof(char *));
-		for (j = 0; j < 8; j++) new_row->field[j] = strdup(row->field[j]);
-		new_row->key = (char **)calloc(row->nb_attributes, sizeof(char *));
-		new_row->value = (char **)calloc(row->nb_attributes, sizeof(char *));
-		for (j = 0; j < row->nb_attributes; j++) {
-			new_row->key[j] = strdup(row->key[j]);
-			new_row->value[j] = strdup(row->value[j]);
-		}
-		new_row->nb_attributes = row->nb_attributes;
-		new_row->rank = r++;
-		if (previous_row != NULL) previous_row->next = new_row;
-		previous_row = new_row;
-		row = row->next;
-	}
-	ret->size = nbrow + inter->size;
+	ret->size += nbrow;
 	update_row_table(ret);
-	update_linked_list(inter);
 
 	return ret;
 }

@@ -53,10 +53,10 @@ void print_string(void *token, FILE *output, void *col, char delim) {
 void print_attributes(void *token, FILE *output, void *col, char delim) {
 	int k;
 	GTF_ROW *row = (GTF_ROW *)token;
-	if (row->nb_attributes != -1) {
-		fprintf(output, "%s \"%s\";", row->key[0], row->value[0]);
-		for (k = 1; k < row->nb_attributes; k++)
-			fprintf(output, " %s \"%s\";", row->key[k], row->value[k]);
+	if (row->attributes.nb != -1) {
+		fprintf(output, "%s \"%s\";", row->attributes.attr[0]->key, row->attributes.attr[0]->value);
+		for (k = 1; k < row->attributes.nb; k++)
+			fprintf(output, " %s \"%s\";", row->attributes.attr[k]->key, row->attributes.attr[k]->value);
 	}
 }
 

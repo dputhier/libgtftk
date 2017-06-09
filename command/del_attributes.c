@@ -26,15 +26,15 @@ GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys) {
 	for (i = 0; i < ret->size; i++) {
 		row = ret->data[i];
 		ok = (features == NULL);
-		if (!ok) ok = strstr(features, row->field[2]);
+		if (!ok) ok = (strstr(features, row->field[2]) != NULL);
 		if (ok) {
-			for (j = 0; j < row->nb_attributes; j++) {
+			/*for (j = 0; j < row->nb_attributes; j++) {
 				if (strstr(keys, row->key[j])) {
 					free(row->key[j]);
 					free(row->value[j]);
 
 				}
-			}
+			}*/
 		}
 	}
 

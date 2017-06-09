@@ -152,18 +152,17 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 			row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 			if (j == 0) ret->data[0] = row;
 			row->rank = gtf_data->data[row_list->row[j]]->rank;
-			row->nb_attributes = gtf_data->data[row_list->row[j]]->nb_attributes;
+			row->attributes.nb = gtf_data->data[row_list->row[j]]->attributes.nb;
 
 			row->field = (char **)calloc(8, sizeof(char*));
 			for (i = 0; i < 8; i++) row->field[i] = strdup(gtf_data->data[row_list->row[j]]->field[i]);
 
-			row->value = (char **)calloc(gtf_data->data[row_list->row[j]]->nb_attributes, sizeof(char*));
-			for (i = 0; i < gtf_data->data[row_list->row[j]]->nb_attributes; i++)
-				row->value[i] = strdup(gtf_data->data[row_list->row[j]]->value[i]);
-
-			row->key = (char **)calloc(gtf_data->data[row_list->row[j]]->nb_attributes, sizeof(char*));
-			for (i = 0; i < gtf_data->data[row_list->row[j]]->nb_attributes; i++)
-				row->key[i] = strdup(gtf_data->data[row_list->row[j]]->key[i]);
+			row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+			for (i = 0; i < row->attributes.nb; i++) {
+				row->attributes.attr[i] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+				row->attributes.attr[i]->key = strdup(gtf_data->data[row_list->row[j]]->attributes.attr[i]->key);
+				row->attributes.attr[i]->value = strdup(gtf_data->data[row_list->row[j]]->attributes.attr[i]->value);
+			}
 			if (j > 0) previous_row->next = row;
 			previous_row = row;
 		}
@@ -191,14 +190,13 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 				if (n == 0) ret->data[0] = row;
 				row->field = (char **)calloc(8, sizeof(char*));
 				for (i = 0; i < 8; i++) row->field[i] = strdup(gtf_data->data[k]->field[i]);
-
-				row->key = (char **)calloc(gtf_data->data[k]->nb_attributes, sizeof(char*));
-				row->value = (char **)calloc(gtf_data->data[k]->nb_attributes, sizeof(char*));
-				for (i = 0; i < gtf_data->data[k]->nb_attributes; i++) {
-					row->key[i] = strdup(gtf_data->data[k]->key[i]);
-					row->value[i] = strdup(gtf_data->data[k]->value[i]);
+				row->attributes.nb = gtf_data->data[k]->attributes.nb;
+				row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+				for (i = 0; i < row->attributes.nb; i++) {
+					row->attributes.attr[i] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+					row->attributes.attr[i]->key = strdup(gtf_data->data[k]->attributes.attr[i]->key);
+					row->attributes.attr[i]->value = strdup(gtf_data->data[k]->attributes.attr[i]->value);
 				}
-				row->nb_attributes = gtf_data->data[k]->nb_attributes;
 				row->rank = gtf_data->data[k]->rank;
 				if (n > 0) previous_row->next = row;
 				previous_row = row;
@@ -213,14 +211,13 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 				if (n == 0) ret->data[0] = row;
 				row->field = (char **)calloc(8, sizeof(char*));
 				for (i = 0; i < 8; i++) row->field[i] = strdup(gtf_data->data[k]->field[i]);
-
-				row->key = (char **)calloc(gtf_data->data[k]->nb_attributes, sizeof(char*));
-				row->value = (char **)calloc(gtf_data->data[k]->nb_attributes, sizeof(char*));
-				for (i = 0; i < gtf_data->data[k]->nb_attributes; i++) {
-					row->key[i] = strdup(gtf_data->data[k]->key[i]);
-					row->value[i] = strdup(gtf_data->data[k]->value[i]);
+				row->attributes.nb = gtf_data->data[k]->attributes.nb;
+				row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+				for (i = 0; i < row->attributes.nb; i++) {
+					row->attributes.attr[i] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+					row->attributes.attr[i]->key = strdup(gtf_data->data[k]->attributes.attr[i]->key);
+					row->attributes.attr[i]->value = strdup(gtf_data->data[k]->attributes.attr[i]->value);
 				}
-				row->nb_attributes = gtf_data->data[k]->nb_attributes;
 				row->rank = gtf_data->data[k]->rank;
 				if (n > 0) previous_row->next = row;
 				previous_row = row;

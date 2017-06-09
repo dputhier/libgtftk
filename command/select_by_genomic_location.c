@@ -22,6 +22,7 @@ extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row(int row, ROW_LIST *dst);
 extern int update_row_table(GTF_DATA *gtf_data);
+extern void add_attribute(GTF_ROW *row, char *key, char *value);
 
 /*
  * select_by_genomic_location function selects rows in GTF_DATA that match with
@@ -96,18 +97,14 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
 	for (i = 0; i < row_list->nb_row; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-		row->key = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
-		row->value = (char **)calloc(gtf_data->data[row_list->row[i]]->nb_attributes, sizeof(char *));
 		row->field = (char **)calloc(8, sizeof(char *));
 		if (i == 0) ret->data[0] = row;
-		for (k = 0; k < gtf_data->data[row_list->row[i]]->nb_attributes; k++) {
-			row->key[k] = strdup(gtf_data->data[row_list->row[i]]->key[k]);
-			row->value[k] = strdup(gtf_data->data[row_list->row[i]]->value[k]);
-		}
+		for (k = 0; k < gtf_data->data[row_list->row[i]]->attributes.nb; k++)
+			add_attribute(row, gtf_data->data[row_list->row[i]]->attributes.attr[k]->key,
+					gtf_data->data[row_list->row[i]]->attributes.attr[k]->value);
 		for (k = 0; k < 8; k++)
 			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
 		row->rank = gtf_data->data[row_list->row[i]]->rank;
-		row->nb_attributes = gtf_data->data[row_list->row[i]]->nb_attributes;
 		if (i > 0) previous_row->next = row;
 		previous_row = row;
 	}

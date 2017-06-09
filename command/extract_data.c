@@ -145,7 +145,7 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 			 * attribute extraction
 			 */
 			else if ((n = is_in_attrs(gtf_data->data[k], ret->column_name[i])) != -1)
-				ret->data[k][i] = strdup(gtf_data->data[k]->value[n]);
+				ret->data[k][i] = strdup(gtf_data->data[k]->attributes.attr[n]->value);
 
 			/*
 			 * not a column and not an attribute ! (some attributes are not

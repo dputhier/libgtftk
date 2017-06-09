@@ -19,12 +19,14 @@ extern GTF_DATA *clone(GTF_DATA *gtf_data);
  */
 extern COLUMN **column;
 
-void add_attribute(GTF_ROW *row, char *key, char *value) {
-	row->nb_attributes++;
-	row->key = (char **)realloc(row->key, row->nb_attributes * sizeof(char *));
-	row->key[row->nb_attributes - 1] = strdup(key);
-	row->value = (char **)realloc(row->value, row->nb_attributes * sizeof(char *));
-	row->value[row->nb_attributes - 1] = strdup(value);
+void add_one_attribute(GTF_ROW *row, char *key, char *value) {
+	row->attributes.nb++;
+	row->attributes.attr = (ATTRIBUTE **)realloc(row->attributes.attr, row->attributes.nb * sizeof(ATTRIBUTE *));
+	row->attributes.attr[row->attributes.nb - 1] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+	row->attributes.attr[row->attributes.nb - 1]->key = strdup(key);
+	row->attributes.attr[row->attributes.nb - 1]->value = strdup(value);
+	if (row->attributes.nb > 1)
+		row->attributes.attr[row->attributes.nb - 2]->next = row->attributes.attr[row->attributes.nb - 1];
 }
 
 __attribute__ ((visibility ("default")))
@@ -35,7 +37,6 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 	 * reserve memory for the GTF_DATA structure to return
 	 */
 	GTF_DATA *ret = clone(gtf_data);
-
 	/*
 	 * indexing the gtf with key
 	 */
@@ -59,7 +60,7 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 		if (find_row_list != NULL)
 			for (i = 0; i < (*find_row_list)->nb_row; i++) {
 				row = ret->data[(*find_row_list)->row[i]];
-				if (strstr(features, row->field[2])) add_attribute(row, new_key, new_value);
+				if (strstr(features, row->field[2])) add_one_attribute(row, new_key, new_value);
 			}
 	}
 	if (test_row_list != NULL) {

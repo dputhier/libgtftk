@@ -73,6 +73,24 @@ typedef struct GTF_READER {
 } GTF_READER;
 
 /*
+ * The structure that represents an attribute (key/value) in the last column of
+ * a GTF file.
+ */
+typedef struct ATTRIBUTE {
+	char *key, *value;
+	struct ATTRIBUTE *next;
+} ATTRIBUTE;
+
+/*
+ * A set of ATTRIBUTE
+ */
+typedef struct ATTRIBUTES {
+	ATTRIBUTE **attr;
+	int nb;
+} ATTRIBUTES;
+
+
+/*
  * A structure to store a row from a GTF file. field contains the string values
  * of the 8 first fields. Attributes are stored in the key/value string tables.
  */
@@ -85,8 +103,9 @@ typedef struct GTF_ROW {
 	/*
 	 * the attributes
 	 */
-	int nb_attributes;
-	char **key, **value;
+	//int nb_attributes;
+	//char **key, **value;
+	ATTRIBUTES attributes;
 
 	/*
 	 * the rank number of the row in the GTF file

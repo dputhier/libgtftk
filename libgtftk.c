@@ -20,18 +20,7 @@
 #include "libgtftk.h"
 
 extern void print_row(FILE *output, GTF_ROW *r, char delim);
-//extern int extract_data(FILE *output, char *gtf_filename, char *key, COLUMN **column, ROW **data, int nb_row, int nb_column);
-//extern int select_by_genomic_location(FILE *output, char *gtf_filename, char *chr, int start, int end, COLUMN **column, ROW **data, int nb_column);
-//extern int get_fasta(FILE *output, char *gtf_filename, char *fasta_file, int intron, int rc, COLUMN **column, ROW **data, int nb_row);
-//extern void init_gtf(char *gtf_filename, char *key, COLUMN ***column, int *nb_column, ROW ***p_data, int *nb_row);
-//extern void init_gtf_from_gtfresult(GTF_RESULT *gtf_result, char *key, COLUMN ***column, int *nb_column, ROW ***p_data, int *nb_row);
-//extern int get_feature_list(FILE *output);
-//extern int get_attribute_list(FILE *output);
-//extern int get_seq_list(FILE *output);
-//extern void init_ftp_data();
-//extern char **select_by_transcript_size(char *gtf_filename, char *key, char *value, int not, COLUMN **column, ROW **data);
-//extern FILE *open_memstream(char **ptr, size_t *sizeloc);
-//extern FILE *fmemopen(void *buf, size_t size, const char *mode);
+extern int update_linked_list(GTF_DATA *gtf_data);
 
 /*
  * This is a pointer on the column model of a GTF file. It is initialized by
@@ -51,10 +40,6 @@ int nb_column;
  * Used in action_nb function in this file.
  */
 int N;
-
-//char **attributes;
-//int nb_attributes;
-//struct hsearch_data *attr_hash;
 
 /*
  * This function splits a character string (s) into a table of words (*tab),
@@ -260,8 +245,8 @@ void print_raw_data(RAW_DATA *raw_data, char delim, char *output) {
  */
 int is_in_attrs(GTF_ROW *row, char *at) {
 	int ret = -1, i;
-	for (i = 0; i < row->nb_attributes; i++)
-		if (!strcmp(row->key[i], at)) {
+	for (i = 0; i < row->attributes.nb; i++)
+		if (!strcmp(row->attributes.attr[i]->key, at)) {
 			ret = i;
 			break;
 		}
@@ -271,7 +256,7 @@ int is_in_attrs(GTF_ROW *row, char *at) {
 char *get_attribute_value(GTF_ROW *row, char *attr) {
 	int k = is_in_attrs(row, attr);
 
-	if (k != -1) return row->value[k];
+	if (k != -1) return row->attributes.attr[k]->value;
 	return NULL;
 }
 
@@ -299,79 +284,26 @@ GTF_DATA *clone(GTF_DATA *gtf_data) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 		ret->data[i] = row;
 		row->rank = gtf_data->data[i]->rank;
-		row->nb_attributes = gtf_data->data[i]->nb_attributes;
-
+		row->attributes.nb = gtf_data->data[i]->attributes.nb;
+		row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+		for (j = 0; j < gtf_data->data[i]->attributes.nb; j++) {
+			row->attributes.attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+			row->attributes.attr[j]->value = strdup(gtf_data->data[i]->attributes.attr[j]->value);
+			row->attributes.attr[j]->key = strdup(gtf_data->data[i]->attributes.attr[j]->key);
+		}
 		row->field = (char **)calloc(8, sizeof(char*));
 		for (j = 0; j < 8; j++) row->field[j] = strdup(gtf_data->data[i]->field[j]);
-
-		row->value = (char **)calloc(gtf_data->data[i]->nb_attributes, sizeof(char*));
-		for (j = 0; j < gtf_data->data[i]->nb_attributes; j++) row->value[j] = strdup(gtf_data->data[i]->value[j]);
-
-		row->key = (char **)calloc(gtf_data->data[i]->nb_attributes, sizeof(char*));
-		for (j = 0; j < gtf_data->data[i]->nb_attributes; j++) row->key[j] = strdup(gtf_data->data[i]->key[j]);
 	}
 	update_linked_list(ret);
 	return ret;
 }
 
-/*__attribute__ ((visibility ("default")))
-TAB_RESULT *get_attribute_list_lib(char *gtf_filename) {
-	char *buffer;
-	size_t size = 0;
-	FILE *output = open_memstream(&buffer, &size);
-	TAB_RESULT *ret = (TAB_RESULT *)calloc(1, sizeof(TAB_RESULT));
-	char *line = (char *)calloc(10000, sizeof(char)), *ptr;
-	int n, i;
-
-	column = NULL;
-	data = NULL;
-	nb_column = nb_row = 0;
-	init_ftp_data();
-	init_gtf(gtf_filename, NULL, &column, &nb_column, &data, &nb_row);
-	n = get_attribute_list(output);
-	fflush(output);
-	fclose(output);
-	FILE *input = fmemopen(buffer, size, "r");
-	ret->data = (char **)calloc(n, sizeof(char *));
-	for (i = 0; i < n; i++) {
-		fgets(line, 9999, input);
-		*(line + strlen(line) - 1) = 0;
-		ret->data[i] = strdup(line);
-		ptr = strchr(ret->data[i], (int)':');
-		if (ptr != NULL) *ptr = '\t';
-	}
-	ret->size = n;
-	if (buffer != NULL) free(buffer);
-	return ret;
+void add_attribute(GTF_ROW *row, char *key, char *value) {
+	row->attributes.nb++;
+	row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+	row->attributes.attr[row->attributes.nb - 1] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+	row->attributes.attr[row->attributes.nb - 1]->key = strdup(key);
+	row->attributes.attr[row->attributes.nb - 1]->value = strdup(value);
+	if (row->attributes.nb > 1)
+		row->attributes.attr[row->attributes.nb - 2]->next = row->attributes.attr[row->attributes.nb - 1];
 }
-
-__attribute__ ((visibility ("default")))
-TAB_RESULT *get_seq_list_lib(char *gtf_filename) {
-	char *buffer;
-	size_t size = 0;
-	FILE *output = open_memstream(&buffer, &size);
-	TAB_RESULT *ret = (TAB_RESULT *)calloc(1, sizeof(TAB_RESULT));
-	char *line = (char *)calloc(10000, sizeof(char)), *ptr;
-	int n, i;
-
-	column = NULL;
-	data = NULL;
-	nb_column = nb_row = 0;
-	init_ftp_data();
-	init_gtf(gtf_filename, "seqid", &column, &nb_column, &data, &nb_row);
-	n = get_seq_list(output);
-	fflush(output);
-	fclose(output);
-	FILE *input = fmemopen(buffer, size, "r");
-	ret->data = (char **)calloc(n, sizeof(char *));
-	for (i = 0; i < n; i++) {
-		fgets(line, 9999, input);
-		*(line + strlen(line) - 1) = 0;
-		ret->data[i] = strdup(line);
-		ptr = strchr(ret->data[i], (int)':');
-		if (ptr != NULL) *ptr = '\t';
-	}
-	ret->size = n;
-	if (buffer != NULL) free(buffer);
-	return ret;
-}*/
