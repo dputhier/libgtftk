@@ -25,6 +25,7 @@ extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
 extern int add_row(int row, ROW_LIST *dst);
 extern int update_row_table(GTF_DATA *gtf_data);
+extern void add_attribute(GTF_ROW *row, char *key, char *value);
 
 /*
  * global variables declaration
@@ -265,7 +266,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
-	int i, j;
+	int i, k;
 	INDEX_ID *gid_index;
 
 	/*
@@ -315,18 +316,13 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	GTF_ROW *row, *previous_row = NULL;
 	for (i = 0; i < row_list->nb_row; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+				row->field = (char **)calloc(8, sizeof(char *));
 		if (i == 0) ret->data[0] = row;
-		row->field = (char **)calloc(8, sizeof(char *));
-		for (j = 0; j < 8; j++)
-			row->field[j] = strdup(gtf_data->data[row_list->row[i]]->field[j]);
-		row->attributes.nb = gtf_data->data[row_list->row[i]]->attributes.nb;
-		row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
-		for (j = 0; j < gtf_data->data[row_list->row[i]]->attributes.nb; j++) {
-			row->attributes.attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
-			row->attributes.attr[j]->key = strdup(gtf_data->data[row_list->row[i]]->attributes.attr[j]->key);
-			row->attributes.attr[j]->value = strdup(gtf_data->data[row_list->row[i]]->attributes.attr[j]->value);
-		}
-
+		for (k = 0; k < gtf_data->data[row_list->row[i]]->attributes.nb; k++)
+			add_attribute(row, gtf_data->data[row_list->row[i]]->attributes.attr[k]->key,
+					gtf_data->data[row_list->row[i]]->attributes.attr[k]->value);
+		for (k = 0; k < 8; k++)
+			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
 		row->rank = gtf_data->data[row_list->row[i]]->rank;
 		if (i > 0) previous_row->next = row;
 		previous_row = row;

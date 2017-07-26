@@ -78,6 +78,19 @@ int update_row_table(GTF_DATA *gtf_data) {
 	return 0;
 }
 
+int update_attribute_table(GTF_ROW * row) {
+	int i;
+	ATTRIBUTE *att;
+	att = row->attributes.attr[0];
+	row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+	free(row->attributes.attr);
+	for (i = 0; i < row->attributes.nb; i++) {
+		row->attributes.attr[i] = att;
+		att = att->next;
+	}
+	return row->attributes.nb;
+}
+
 /*
  * The symetric function of update_row_table. This function rebuild the linked
  * list from the table in gtf_data->data.

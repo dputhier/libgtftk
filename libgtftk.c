@@ -290,6 +290,7 @@ GTF_DATA *clone(GTF_DATA *gtf_data) {
 			row->attributes.attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
 			row->attributes.attr[j]->value = strdup(gtf_data->data[i]->attributes.attr[j]->value);
 			row->attributes.attr[j]->key = strdup(gtf_data->data[i]->attributes.attr[j]->key);
+			if (j > 0) row->attributes.attr[j - 1]->next = row->attributes.attr[j];
 		}
 		row->field = (char **)calloc(8, sizeof(char*));
 		for (j = 0; j < 8; j++) row->field[j] = strdup(gtf_data->data[i]->field[j]);
@@ -300,7 +301,7 @@ GTF_DATA *clone(GTF_DATA *gtf_data) {
 
 void add_attribute(GTF_ROW *row, char *key, char *value) {
 	row->attributes.nb++;
-	row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+	row->attributes.attr = (ATTRIBUTE **)realloc(row->attributes.attr, row->attributes.nb * sizeof(ATTRIBUTE *));
 	row->attributes.attr[row->attributes.nb - 1] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
 	row->attributes.attr[row->attributes.nb - 1]->key = strdup(key);
 	row->attributes.attr[row->attributes.nb - 1]->value = strdup(value);

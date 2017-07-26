@@ -23,6 +23,7 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 				free(row->attributes.attr[j]->value);
 				free(row->attributes.attr[j]);
 			}
+			free(row->attributes.attr);
 			free(row);
 		}
 		free(gtf_data->data);

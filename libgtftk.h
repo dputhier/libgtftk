@@ -277,7 +277,7 @@ typedef struct STRING_LIST {
 } STRING_LIST;
 
 /*
- *
+ * Used by get_sequences function to modelize exons, introns ...
  */
 typedef struct SEQFRAG {
 	int start, end;

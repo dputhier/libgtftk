@@ -26,6 +26,7 @@ extern COLUMN **column;
 INDEX_ID *tid_index, *gid_index;
 int n, nbrow;
 GTF_DATA *gtf_d;
+GTF_ROW *gtf_d0;
 
 static void action_transcript(const void *nodep, const VISIT which, const int depth) {
 	int i, ok, start, end, k;
@@ -50,7 +51,8 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 				row = gtf_d->data[datap->row[i]];
 
 				// the current feature value
-				feature = row->field[2];
+				feature = row->field[2
+									 ];
 				if (!strcmp(feature, "transcript")) {
 					ok = 1;
 					break;
@@ -75,7 +77,7 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 					if (k > end) end = k;
 
 					if (!ok)
-						if (!strcmp(feature, "exon")) {
+						if (strcmp(feature, "gene") && strcmp(feature, "transcript")) {
 							for (k = 0; k < row->attributes.nb; k++)
 								if (strncmp(row->attributes.attr[k]->key, "exon", 4))
 									add_attribute(tr_row, row->attributes.attr[k]->key, row->attributes.attr[k]->value);
@@ -92,17 +94,18 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 				}
 				asprintf(&(tr_row->field[3]), "%d", start);
 				asprintf(&(tr_row->field[4]), "%d", end);
-
-				if (!strcmp(gtf_d->data[datap->row[0]]->field[2], "gene")) {
-					tr_row->next = gtf_d->data[datap->row[1]];
-					gtf_d->data[datap->row[0]]->next = tr_row;
-				}
-				else {
-					tr_row->next = gtf_d->data[datap->row[0]];
-					if (datap->row[0] != 0)
-						gtf_d->data[datap->row[0] - 1]->next = tr_row;
-					else
-						gtf_d->data[0] = tr_row;
+				if (ok) {
+					if (!strcmp(gtf_d->data[datap->row[0]]->field[2], "gene")) {
+						tr_row->next = gtf_d->data[datap->row[1]];
+						gtf_d->data[datap->row[0]]->next = tr_row;
+					}
+					else {
+						tr_row->next = gtf_d->data[datap->row[0]];
+						if (datap->row[0] != 0)
+							gtf_d->data[datap->row[0] - 1]->next = tr_row;
+						else
+							gtf_d0 = tr_row;
+					}
 				}
 			}
 			n++;
@@ -181,9 +184,18 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 				asprintf(&(g_row->field[3]), "%d", start);
 				asprintf(&(g_row->field[4]), "%d", end);
 
-				if (datap->row[0] != 0)	gtf_d->data[datap->row[0] - 1]->next = g_row;
 				g_row->next = gtf_d->data[datap->row[0]];
-				if (datap->row[0] == 0)	gtf_d->data[0] = g_row;
+				if (datap->row[0] != 0)
+					gtf_d->data[datap->row[0] - 1]->next = g_row;
+				else
+					gtf_d0 = g_row;
+
+				/*if (datap->row[0] != 0)	gtf_d->data[datap->row[0] - 1]->next = g_row;
+				g_row->next = gtf_d->data[datap->row[0]];
+				if (datap->row[0] == 0)	{
+					fprintf(stderr, "YEP !\n");
+					gtf_d->data[0] = g_row;
+				}*/
 			}
 			n++;
 			break;
@@ -194,6 +206,7 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
+
 	/*
 	 * reserve memory for the GTF_DATA structure to return
 	 */
@@ -209,8 +222,9 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
 	 */
 	gtf_d = ret;
 	n = nbrow = 0;
+	gtf_d0 = NULL;
 	twalk(column[tid_index->column]->index[tid_index->index_rank].data, action_transcript);
-
+	if (gtf_d0 != NULL) gtf_d->data[0] = gtf_d0;
 	ret->size = nbrow + ret->size;
 	update_row_table(ret);
 
@@ -223,9 +237,11 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
 	 * tree browsing of the gene_id index (rank 1)
 	 */
 	n = nbrow = 0;
+	gtf_d0 = NULL;
 	twalk(column[gid_index->column]->index[gid_index->index_rank].data, action_gene);
-
+	if (gtf_d0 != NULL) gtf_d->data[0] = gtf_d0;
 	ret->size += nbrow;
+
 	update_row_table(ret);
 
 	return ret;

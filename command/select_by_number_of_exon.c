@@ -18,6 +18,7 @@ extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int comprow(const void *m1, const void *m2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
 extern int update_row_table(GTF_DATA *gtf_data);
+extern void add_attribute(GTF_ROW *row, char *key, char *value);
 
 /*
  * global variables declaration
@@ -127,16 +128,13 @@ GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max) {
 	GTF_ROW *row, *previous_row = NULL;
 	for (i = 0; i < row_list->nb_row; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-		row->attributes.nb = gtf_data->data[row_list->row[i]]->attributes.nb;
-		row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
 		row->field = (char **)calloc(8, sizeof(char *));
 		if (i == 0) ret->data[0] = row;
+		for (k = 0; k < gtf_data->data[row_list->row[i]]->attributes.nb; k++)
+			add_attribute(row, gtf_data->data[row_list->row[i]]->attributes.attr[k]->key,
+					gtf_data->data[row_list->row[i]]->attributes.attr[k]->value);
 		for (k = 0; k < 8; k++)
 			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
-		for (k = 0; k < row->attributes.nb; k++) {
-			row->attributes.attr[k]->key = strdup(gtf_data->data[row_list->row[i]]->attributes.attr[k]->key);
-			row->attributes.attr[k]->value = strdup(gtf_data->data[row_list->row[i]]->attributes.attr[k]->value);
-		}
 		row->rank = gtf_data->data[row_list->row[i]]->rank;
 		if (i > 0) previous_row->next = row;
 		previous_row = row;

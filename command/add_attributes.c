@@ -13,21 +13,12 @@
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
 extern GTF_DATA *clone(GTF_DATA *gtf_data);
+extern void add_attribute(GTF_ROW *row, char *key, char *value);
 
 /*
  * global variables declaration
  */
 extern COLUMN **column;
-
-void add_one_attribute(GTF_ROW *row, char *key, char *value) {
-	row->attributes.nb++;
-	row->attributes.attr = (ATTRIBUTE **)realloc(row->attributes.attr, row->attributes.nb * sizeof(ATTRIBUTE *));
-	row->attributes.attr[row->attributes.nb - 1] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
-	row->attributes.attr[row->attributes.nb - 1]->key = strdup(key);
-	row->attributes.attr[row->attributes.nb - 1]->value = strdup(value);
-	if (row->attributes.nb > 1)
-		row->attributes.attr[row->attributes.nb - 2]->next = row->attributes.attr[row->attributes.nb - 1];
-}
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *new_key, char *inputfile_name) {
@@ -53,14 +44,15 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 	while (getline(&buffer, &buffersize, input) > 0) {
 		value = buffer;
 		new_value = strchr(buffer, '\t') + 1;
-		*(new_value + strlen(new_value) - 1) = 0;
+		if (*(new_value + strlen(new_value) - 1) == '\n') *(new_value + strlen(new_value) - 1) = 0;
 		*strchr(buffer, '\t') = 0;
 		test_row_list->token = value;
 		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[ix->column]->index[ix->index_rank].data), compare_row_list);
 		if (find_row_list != NULL)
 			for (i = 0; i < (*find_row_list)->nb_row; i++) {
 				row = ret->data[(*find_row_list)->row[i]];
-				if (strstr(features, row->field[2])) add_one_attribute(row, new_key, new_value);
+				if (!strcmp(features, "*") || strstr(features, row->field[2]))
+					add_attribute(row, new_key, new_value);
 			}
 	}
 	if (test_row_list != NULL) {
