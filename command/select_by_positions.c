@@ -33,7 +33,7 @@ GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int pos[], int size) {
 
 	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
 
-	for (i = 0; i < ret->size; i++) {
+/*	for (i = 0; i < ret->size; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 		if (i == 0) ret->data[0] = row;
 		row->rank = gtf_data->data[pos[i]]->rank;
@@ -49,7 +49,7 @@ GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int pos[], int size) {
 		if (i > 0) previous_row->next = row;
 		previous_row = row;
 	}
-
+*/
 	update_row_table(ret);
 
 	return ret;
