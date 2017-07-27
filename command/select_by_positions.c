@@ -12,7 +12,7 @@ extern int update_row_table(GTF_DATA *gtf_data);
 
 
 __attribute__ ((visibility ("default")))
-GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int pos[], int size) {
+GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size) {
 	int k, i, j	;
 	GTF_ROW *row, *previous_row = NULL;
 	ROW_LIST *row_list;
@@ -33,23 +33,25 @@ GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int pos[], int size) {
 
 	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
 
-/*	for (i = 0; i < ret->size; i++) {
+	for (i = 0; i < ret->size; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 		if (i == 0) ret->data[0] = row;
 		row->rank = gtf_data->data[pos[i]]->rank;
-		row->nb_attributes = gtf_data->data[pos[i]]->nb_attributes;
+		row->attributes.nb = gtf_data->data[pos[i]]->attributes.nb;
 		row->field = (char **)calloc(8, sizeof(char*));
 		for (j = 0; j < 8; j++) row->field[j] = strdup(gtf_data->data[pos[i]]->field[j]);
-		row->value = (char **)calloc(gtf_data->data[pos[i]]->nb_attributes, sizeof(char*));
-		for (j = 0; j < gtf_data->data[pos[i]]->nb_attributes; j++)
-			row->value[j] = strdup(gtf_data->data[pos[i]]->value[j]);
-		row->key = (char **)calloc(gtf_data->data[pos[i]]->nb_attributes, sizeof(char*));
-		for (j = 0; j < gtf_data->data[pos[i]]->nb_attributes; j++)
-			row->key[j] = strdup(gtf_data->data[pos[i]]->key[j]);
+		row->attributes.nb = gtf_data->data[pos[i]]->attributes.nb;
+		row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+		for (j = 0; j < row->attributes.nb; j++) {
+			row->attributes.attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
+			row->attributes.attr[j]->key = strdup(gtf_data->data[pos[i]]->attributes.attr[j]->key);
+			row->attributes.attr[j]->value = strdup(gtf_data->data[pos[i]]->attributes.attr[j]->value);
+			if (j > 0) row->attributes.attr[j - 1]->next = row->attributes.attr[j];
+		}
 		if (i > 0) previous_row->next = row;
 		previous_row = row;
 	}
-*/
+
 	update_row_table(ret);
 
 	return ret;

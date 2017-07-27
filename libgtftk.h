@@ -334,6 +334,6 @@ TTEXT *get_attribute_values_list(GTF_DATA *gtf_data, char *attribute);
 GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data);
 GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *new_key, char *inputfile_name);
 GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys);
-GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int pos[], int size);
+GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */
