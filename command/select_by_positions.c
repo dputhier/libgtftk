@@ -10,12 +10,10 @@
 
 extern int update_row_table(GTF_DATA *gtf_data);
 
-
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size) {
-	int k, i, j	;
+	int i, j	;
 	GTF_ROW *row, *previous_row = NULL;
-	ROW_LIST *row_list;
 
 	/*
 	 * reserve memory for the GTF_DATA structure to return
@@ -25,11 +23,6 @@ GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size) {
 
 	// The size of the return gtf_data is the number of requested rows.
 	ret->size = size;
-
-	/*
-	 * reserve memory for the final row list
-	 */
-	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
 
 	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
 

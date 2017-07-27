@@ -177,10 +177,4 @@ void make_columns() {
 	column[6] = make_column('S', 6, ".", "strand");
 	column[7] = make_column('S', 7, ".", "phase");
 	column[8] = make_column('A', 8, ".", "attributes");
-
-	for (i = 0; i < (nb_column - 1); i++) {
-		//column[i]->index = (INDEX *)calloc(1, sizeof(INDEX));
-		//column[i]->index->key = column[i]->name;
-		//column[i]->nb_index = 1;
-	}
 }

@@ -103,8 +103,6 @@ typedef struct GTF_ROW {
 	/*
 	 * the attributes
 	 */
-	//int nb_attributes;
-	//char **key, **value;
 	ATTRIBUTES attributes;
 
 	/*
@@ -138,6 +136,11 @@ typedef struct GTF_DATA {
 	 * a table of rows
 	 */
 	GTF_ROW **data;
+
+	/*
+	 * the comments at the beginning of the file, started with "##"
+	 */
+
 } GTF_DATA;
 
 /*

@@ -567,14 +567,14 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 							}
 						}
 					}
-				}
 
-				/*
-				 * The last sort operation on features, to ensure that they are
-				 * in ascending order, based on their local start coordinate in
-				 * the transcript.
-				 */
-				qsort(sequence->features->feature, sequence->features->nb, sizeof(FEATURE *), compare_feature_tr);
+					/*
+					 * The last sort operation on features, to ensure that they are
+					 * in ascending order, based on their local start coordinate in
+					 * the transcript.
+					 */
+					qsort(sequence->features->feature, sequence->features->nb, sizeof(FEATURE *), compare_feature_tr);
+				}
 			}
 		}
 	}
