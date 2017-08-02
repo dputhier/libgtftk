@@ -175,6 +175,8 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 */
 		ret->size = gtf_data->size - row_list->nb_row;
 
+		fprintf(stderr, "size = %d\n", ret->size);
+
 		/*
 		 * we reserve memory for the first row in the table of rows
 		 */
@@ -184,6 +186,10 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * an ugly code to get the "complement" rows in gtf_data
 		 */
 		j = 0;
+		if (row_list->nb_row == 0) {
+			row_list->row = (int *)calloc(1, sizeof(int));
+			row_list->row[0] = gtf_data->size + 1;
+		}
 		for (k = 0; k < gtf_data->size; k++) {
 			if (k < row_list->row[j]) {
 				row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));

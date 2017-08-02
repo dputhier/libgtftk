@@ -314,11 +314,19 @@ typedef struct TTEXT {
 } TTEXT;
 
 /*
+ * used by add_exon_number to sort exons by their start value
+ */
+typedef struct SORT_ROW {
+	int row;
+	int value;
+} SORT_ROW;
+
+/*
  * Prototypes for the visible functions (callable by external cient)
  */
 GTF_DATA *load_GTF(char *input);
 GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not);
-void print_gtf_data(GTF_DATA *gtf_data, char *output);
+void print_gtf_data(GTF_DATA *gtf_data, char *output, int add_chr);
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr, int *begin_gl, int *end_gl);
@@ -338,5 +346,6 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data);
 GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *new_key, char *inputfile_name);
 GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys);
 GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size);
+GTF_DATA *add_exon_number(GTF_DATA *gtf_data);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

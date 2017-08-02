@@ -19,7 +19,7 @@
 
 #include "libgtftk.h"
 
-extern void print_row(FILE *output, GTF_ROW *r, char delim);
+extern void print_row(FILE *output, GTF_ROW *r, char delim, int add_chr);
 extern int update_linked_list(GTF_DATA *gtf_data);
 
 /*
@@ -192,13 +192,13 @@ int add_row_list(ROW_LIST *src, ROW_LIST *dst) {
  * 		gtf_data:	a pointer on the GTF data to be printed
  */
 __attribute__ ((visibility ("default")))
-void print_gtf_data(GTF_DATA *gtf_data, char *output) {
+void print_gtf_data(GTF_DATA *gtf_data, char *output, int add_chr) {
 	int i;
 	FILE *out = stdout;
 
 	if (*output != '-') out = fopen(output, "w");
 	if (out == NULL) out = stdout;
-	for (i = 0; i < gtf_data->size; i++) print_row(out, gtf_data->data[i], '\t');
+	for (i = 0; i < gtf_data->size; i++) print_row(out, gtf_data->data[i], '\t', add_chr);
 	if (out != stdout) {
 		fflush(out);
 		fclose(out);

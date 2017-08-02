@@ -78,12 +78,12 @@ int update_row_table(GTF_DATA *gtf_data) {
 	return 0;
 }
 
-int update_attribute_table(GTF_ROW * row) {
+int update_attribute_table(GTF_ROW *row) {
 	int i;
 	ATTRIBUTE *att;
 	att = row->attributes.attr[0];
-	row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
 	free(row->attributes.attr);
+	row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
 	for (i = 0; i < row->attributes.nb; i++) {
 		row->attributes.attr[i] = att;
 		att = att->next;

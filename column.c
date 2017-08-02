@@ -125,9 +125,10 @@ void index_row(int row_nb, char *value, INDEX *index) {
  * 		r:			the row to print
  * 		delim:		the delimiter character
  */
-void print_row(FILE *output, GTF_ROW *r, char delim) {
+void print_row(FILE *output, GTF_ROW *r, char delim, int add_chr) {
 	int i;
 
+	if (add_chr) fprintf(output, "chr");
 	for (i = 0; i < 8; i++) print_string(r->field[i], output, column[i], delim);
 	print_attributes(r, output, NULL, 0);
 	fprintf(output, "\n");
@@ -164,8 +165,6 @@ COLUMN *make_column(char type, int i, void *dv, char *name) {
  * loadGTF function, the first function a client should call to use the library.
  */
 void make_columns() {
-	int i;
-
 	nb_column = 9;
 	column = (COLUMN **)calloc(nb_column, sizeof(COLUMN *));
 	column[0] = make_column('S', 0, ".", "seqid");
