@@ -12,19 +12,28 @@
 
 #include "libgtftk.h"
 #include <search.h>
-/*
- * external functions declaration
- */
-extern GTF_READER *get_gtf_reader(char *query);
-extern void make_columns();
-extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
-extern int split_ip(char ***tab, char *s, char *delim);
-extern void split_key_value(char *s, char **key, char **value);
-extern void index_row(int row_nb, char *value, INDEX *index);
-extern INDEX *make_index(INDEX_ID **index_id, char *key);
 
 /*
- * global variables declaration
+ * external functions in gtf_reader.c
+ */
+extern GTF_READER *get_gtf_reader(char *query);
+extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
+
+/*
+ * external functions in column.c
+ */
+extern void make_columns();
+extern void make_index(INDEX_ID **p_index_id, char *key);
+extern void index_row(int row_nb, char *value, INDEX *index);
+
+/*
+ * external functions in libgtftk.c
+ */
+extern int split_ip(char ***tab, char *s, char *delim);
+extern void split_key_value(char *s, char **key, char **value);
+
+/*
+ * global variables in libgtftk.c
  */
 extern COLUMN **column;
 extern int nb_column;
@@ -47,6 +56,11 @@ int add_index(char *key, GTF_DATA *gtf_data) {
 	return column[8]->nb_index - 1;
 }
 
+/*
+ * This comparison function is used in get_all_attributes function to get the
+ * list of all the attributes that are in a GTF data. Two attributes are equals
+ * if they have the same name.
+ */
 int compatt(const void *s1, const void *s2) {
 	char *cs1 = *(char **)s1;
 	char *cs2 = *(char **)s2;
@@ -78,6 +92,17 @@ int update_row_table(GTF_DATA *gtf_data) {
 	return 0;
 }
 
+/*
+ * Like the rows, the attributes are stored as a linked list and a table. The
+ * linked list is used to remove and add attributes easily, while the table is
+ * more suitable to access a single attribute. This function reconstruct the
+ * table from the linked list.
+ *
+ * Parameters:
+ * 		row:	a row for which to update the attributes table
+ *
+ * Returns:		the number of attributes in the row
+ */
 int update_attribute_table(GTF_ROW *row) {
 	int i;
 	ATTRIBUTE *att;
@@ -135,49 +160,65 @@ int update_linked_list(GTF_DATA *gtf_data) {
  */
 __attribute__ ((visibility ("default")))
 GTF_DATA *load_GTF(char *input) {
-	// a buffer to store rows of GTF file as they are read
+	/*
+	 * a buffer to store rows of GTF file as they are read
+	 */
 	char *buffer = (char *)calloc(10000, sizeof(char));
 
-	// a string table to split GTF rows into fields
+	/*
+	 * string tables to split GTF rows and attributes into fields
+	 */
 	char **token, **attr;
 
-	int i, nb_row;
+	/*
+	 * A loop integer
+	 */
+	int i;
 
-	// creates a GTF_READER to read from input
+	/*
+	 * a counter for the rows
+	 */
+	int nb_row = 0;
+
+	/*
+	 * creates a GTF_READER to read from input
+	 */
 	GTF_READER *gr = get_gtf_reader(input);
 	if (gr == NULL) return NULL;
 
-	// reserve memory for the GTF_DATA structure to return
+	/*
+	 * allocates memory for the GTF_DATA structure to return
+	 */
 	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
 
-	// reserve memory for one row in the table.
+	/*
+	 * allocates memory for one row in the table.
+	 */
 	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
 
 	GTF_ROW *row, *previous_row;
 
-	// make the GTF column model
+	/*
+	 * make the GTF column model
+	 */
 	make_columns();
 
-	// a counter for the rows
-	nb_row = 0;
-
-	// loop on the GTF file rows
+	/*
+	 * loop on the GTF file rows
+	 */
 	while (get_next_gtf_line(gr, buffer) != NULL) {
 		if (*buffer != '#') {
 			*(buffer + strlen(buffer) - 1) = 0;
 
-			// reserve memory for a new row in the row list
+			/*
+			 * allocates memory for a new row in the row list
+			 */
 			row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 			if (nb_row == 0) ret->data[0] = row;
-			//ret->data = (GTF_ROW *)realloc(ret->data, (nb_row + 1) * sizeof(GTF_ROW));
 
 			/*
-			 * reserve memory for the new row; this row variable is used to
-			 * improve readability of the code
+			 * split the row and check the number of fields (should be 9)
 			 */
-			//row = ret->data + nb_row;
-
-			// split the row and check the number of fields (should be 9)
 			if (split_ip(&token, buffer, "\t") != nb_column) {
 				if (!strcmp(gr->filename, "-"))
 					fprintf(stderr, "ERROR : standard input is not a valid GTF stream\n");
@@ -186,63 +227,131 @@ GTF_DATA *load_GTF(char *input) {
 				exit(0);
 			}
 
-			// reserve memory for the 8 first fields
+			/*
+			 * allocates memory for the 8 first fields
+			 */
 			row->field = (char **)calloc(8, sizeof(char *));
 
-			// store the 8 first fields
+			/*
+			 * store the 8 first fields
+			 */
 			for (i = 0; i < 8; i++) row->field[i] = strdup(token[i]);
 
-			// split the attributes
+			/*
+			 * split the attributes
+			 */
 			row->attributes.nb = split_ip(&attr, token[8], ";");
 
-			// reserve memory for the attributes
+			/*
+			 * allocates memory for the attributes
+			 */
 			row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
 
-			// store the attributes
+			/*
+			 * store the attributes
+			 */
 			for (i = 0; i < row->attributes.nb; i++) {
 				row->attributes.attr[i] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
 				split_key_value(attr[i], &(row->attributes.attr[i]->key), &(row->attributes.attr[i]->value));
 			}
 
-			// keep the rank number of the row
+			/*
+			 * keep the rank number of the row
+			 */
 			row->rank = nb_row;
 
-			// insert the new row in the list
-			//if (nb_row > 0) (ret->data + nb_row - 1)->next = row;
+			/*
+			 * insert the new row in the list
+			 */
 			if (nb_row > 0) previous_row->next = row;
 			previous_row = row;
 
-			// one more row has been read
+			/*
+			 * one more row has been read
+			 */
 			nb_row++;
 
-			// free memory used to split the row and the attributes
+			/*
+			 * free memory used to split the row and the attributes
+			 */
 			free(token);
 			free(attr);
 		}
 	}
 
-	// store the final number of rows
+	/*
+	 * store the final number of rows
+	 */
 	ret->size = nb_row;
 
-	// update the row tlist
+	/*
+	 * update the row table
+	 */
 	update_row_table(ret);
 
-	// free the buffer used to read GTF file
+	/*
+	 * free the buffer used to read GTF file
+	 */
 	free(buffer);
 
 	return ret;
 }
 
+/*
+ * This function returns the list of attributes in a GTF_DATA. It is used in
+ * get_list function and in extract_data
+ *
+ * Parameters:
+ * 		input:	the input GTF data
+ *
+ * Returns:		a STRING_LIST containing the list of attributes
+ */
 STRING_LIST *get_all_attributes(GTF_DATA *gtf_data) {
+	/*
+	 * Some loop variables
+	 */
 	int i, j;
+
+	/*
+	 * The list of attributes to return. Each time a new attribute is found,
+	 * it will be added in this list.
+	 */
 	STRING_LIST *sl = (STRING_LIST *)calloc(1, sizeof(STRING_LIST));
+
+	/*
+	 * a variable to point on each attribute we want to look for in the
+	 * result list
+	 */
 	char **pkey;
+
+	/*
+	 * A convenient variable to iterate on the rows of the input GTF data
+	 */
 	GTF_ROW *row;
 
+	/*
+	 * The loop on the rows
+	 */
 	for (j = 0; j < gtf_data->size; j++) {
+		/*
+		 * The current row
+		 */
 		row = gtf_data->data[j];
+
+		/*
+		 * The loop on the attributes of the current row
+		 */
 		for (i = 0; i < row->attributes.nb; i++) {
+
+			/*
+			 * the attribute to look for in the result list
+			 */
 			pkey = &(row->attributes.attr[i]->key);
+
+			/*
+			 * If the attribute is not found in the result list, we add it with
+			 * the lsearch function
+			 */
 			if (!lfind(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt)) {
 				sl->list = (char **)realloc(sl->list, (sl->nb + 1) * sizeof(char *));
 				lsearch(pkey, sl->list, (size_t *)(&sl->nb), sizeof(char *), compatt);
@@ -259,6 +368,20 @@ void action_destroy(void *nodep) {
 
 }
 
+/*
+ * This function is used to get an index on a column_name or an attribute.
+ *
+ * Parameters:
+ * 		gtf_data:	the input GTF data
+ * 		key:		a column name or an attribute name for wich the index is
+ * 					looked for
+ *
+ * Returns:			an INDEX_ID structure containing the column number and the
+ * 					index rank corresponding to to searched index.
+ * 					If key is not a column name nor an attribute name, the
+ * 					returned column number is set to -1.
+ * 					If the index is not found, index rank is set to -1
+ */
 INDEX_ID *get_index(GTF_DATA *gtf_data, char *key) {
 	int c, k;
 	INDEX_ID *ret = calloc(1, sizeof(INDEX_ID));
@@ -274,13 +397,11 @@ INDEX_ID *get_index(GTF_DATA *gtf_data, char *key) {
 			 * parameter, we return it
 			 */
 			ret->column = c;
-			for (k = 0; k < column[c]->nb_index; k++) {
+			for (k = 0; k < column[c]->nb_index; k++)
 				if ((column[c]->index[k].data != NULL) && (column[c]->index[k].gtf_data == gtf_data)) {
 					ret->index_rank = k;
-					//ret = &(column[c]->index[k]);
+					break;
 				}
-				break;
-			}
 			break;
 		}
 
@@ -303,27 +424,63 @@ INDEX_ID *get_index(GTF_DATA *gtf_data, char *key) {
 				 */
 				if ((column[8]->index[c].data != NULL) && (column[8]->index[c].gtf_data == gtf_data)) {
 					ret->index_rank = c;
-					//ret = &(column[8]->index[c]);
+					break;
 				}
-				break;
 			}
 	}
 	return ret;
 }
 
-INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key, int *index_rank) {
+/*
+ * This function check for an index on a GTF data with a column or a attribute.
+ * If the index does not exist, it is created. Note that all the indexes are
+ * stored in the column model (column external variable at the begining of this
+ * file), declared in the libgtftk.c file.
+ *
+ * Parameters:
+ * 		gtf_data:	the input GTF data
+ * 		key:		the column or attribute name on which the index is to be made
+ *
+ * Returns:			the INDEX_ID of the requested index
+ *
+ */
+INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 	int j, k;
 
+	/*
+	 * ask for the requested index
+	 */
 	INDEX_ID *index_id = get_index(gtf_data, key);
 
+	/*
+	 * The requested index does not exist
+	 */
 	if (index_id->index_rank == -1) {
+		/*
+		 * make a new index and add it in the corresponding column
+		 */
 		make_index(&index_id, key);
+
+		/*
+		 * index is to be made on a column
+		 */
 		if (index_id->column != 8) {
+			/*
+			 * indexes all the rows of the GTF data with a column and put a
+			 * reference on the GTF data in the INDEX
+			 */
 			for (k = 0; k < gtf_data->size; k++)
 				index_row(k, gtf_data->data[k]->field[index_id->column], column[index_id->column]->index + index_id->index_rank);
 			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
 		}
+		/*
+		 * index is to be made on an attribute
+		 */
 		else {
+			/*
+			 * indexes all the rows of the GTF data with aan attribute and put a
+			 * reference on the GTF data in the INDEX
+			 */
 			for (k = 0; k < gtf_data->size; k++)
 				for (j = 0; j < gtf_data->data[k]->attributes.nb; j++)
 					if (!strcmp(key, gtf_data->data[k]->attributes.attr[j]->key)) {

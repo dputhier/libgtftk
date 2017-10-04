@@ -120,7 +120,7 @@ typedef struct GTF_ROW {
 /*
  * This is the structure that holds data in GTF format. It is also the
  * structure used as input/output for most of the functions of the library. To
- * start using the library, one must call the loadGTF() function with a GTF
+ * start using the library, one must call the load_GTF() function with a GTF
  * file name in parameter and gets a pointer on a GTF_DATA in return. Then, all
  * the other functions must be called with this GTF_DATA pointer as input.
  * Their result can be another GTF_DATA pointer that can be used as input for
@@ -346,6 +346,6 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data);
 GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *new_key, char *inputfile_name);
 GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys);
 GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size);
-GTF_DATA *add_exon_number(GTF_DATA *gtf_data);
+GTF_DATA *add_exon_number(GTF_DATA *gtf_data, char *exon_number_field);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

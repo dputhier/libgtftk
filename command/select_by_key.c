@@ -12,40 +12,23 @@
 #include "libgtftk.h"
 
 /*
- * external functions declaration
+ * external functions in libgtftk.c
  */
 extern int comprow(const void *m1, const void *m2);
 extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row_list(ROW_LIST *src, ROW_LIST *dst);
-extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int split_ip(char ***tab, char *s, char *delim);
+
+/*
+ * external functions in load_gtf.c
+ */
+extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int update_row_table(GTF_DATA *gtf_data);
 
 /*
- * global variables declaration
+ * global variables in libgtftk.c
  */
 extern COLUMN **column;
-
-int N;
-
-/*
- * This function is intended to be used with the C twalk function. It is used
- * to evaluate the number of elements in an index. the N variable is declared
- * at the beginning of this file. For more information about twalk, see the
- * man pages.
- */
-/*static void action_nb(const void *nodep, const VISIT which, const int depth) {
-	switch (which) {
-		case preorder:
-			break;
-		case postorder:
-		case leaf:
-			N++;
-			break;
-		case endorder:
-			break;
-	}
-}*/
 
 /*
  * select_by_key function selects rows in GTF_DATA that contains some given
@@ -79,7 +62,9 @@ __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	int i, j, k, p, n = 0;
 
-	// reserve memory for the GTF_DATA structure to return
+	/*
+	 * reserve memory for the GTF_DATA structure to return
+	 */
 	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
 
 	/*
@@ -91,7 +76,9 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	 */
 	ROW_LIST *test_row_list = calloc(1, sizeof(ROW_LIST)), *row_list = NULL, **find_row_list = NULL;
 
-	// splitting the given values with the "," character
+	/*
+	 * splitting the given values with the "," character
+	 */
 	char **values;
 	int nb_value = split_ip(&values, value, ",");
 
@@ -100,14 +87,11 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	 */
 	INDEX_ID *index_id = index_gtf(gtf_data, key);
 
-	//int N = 0;
-	//twalk(column[index_id->column]->index[index_id->index_rank].data, action_nb);
-	//fprintf(stderr, "nb index : %d\n", column[index_id->column]->nb_index);
-	//fprintf(stderr, "%s : %d\n", column[index_id->column]->index[index_id->index_rank].key, N);
-
 	GTF_ROW *row, *previous_row = NULL;
 
-	// reserve memory for the final ROW_LIST
+	/*
+	 * allocating memory for the final ROW_LIST
+	 */
 	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
 
 	for (p = 0; p < nb_value; p++) {
@@ -174,8 +158,6 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * total number of rows and the number of rows in row_list
 		 */
 		ret->size = gtf_data->size - row_list->nb_row;
-
-		fprintf(stderr, "size = %d\n", ret->size);
 
 		/*
 		 * we reserve memory for the first row in the table of rows

@@ -23,11 +23,11 @@ extern COLUMN **column;
 __attribute__ ((visibility ("default")))
 GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *new_key, char *inputfile_name) {
 	int i;
-
 	/*
-	 * reserve memory for the GTF_DATA structure to return
+	 * allocating memory for the GTF_DATA structure to return
 	 */
 	GTF_DATA *ret = clone(gtf_data);
+
 	/*
 	 * indexing the gtf with key
 	 */

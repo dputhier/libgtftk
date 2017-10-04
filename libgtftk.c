@@ -253,6 +253,15 @@ int is_in_attrs(GTF_ROW *row, char *at) {
 	return ret;
 }
 
+/*
+ * Get the value of an attribute in a row
+ *
+ * Parameters:
+ * 		row:	the row in wich to look for the attribute
+ * 		attr:	the name of the attribute
+ *
+ * Returns:		the value of the attribute or NULL if it does not exist
+ */
 char *get_attribute_value(GTF_ROW *row, char *attr) {
 	int k = is_in_attrs(row, attr);
 
@@ -260,6 +269,10 @@ char *get_attribute_value(GTF_ROW *row, char *attr) {
 	return NULL;
 }
 
+/*
+ * Some convenient methods for a client (in Python for example) to allocate
+ * and free memory blocks
+ */
 __attribute__ ((visibility ("default")))
 char *get_memory(long int size) {
 	int i;
@@ -274,28 +287,68 @@ int free_mem(char *ptr) {
 	return 0;
 }
 
+/*
+ * This function make a clone of the input GTF data. Used in functions that
+ * does annotation tasks (add_attributes, add_exon_number ...). Those functions
+ * make a clone of the input GTF data and perform the annotation on the clone,
+ * leaving the initial data unchanged.
+ */
 GTF_DATA *clone(GTF_DATA *gtf_data) {
 	int i, j;
 	GTF_ROW *row;
+
+	/*
+	 * The clone GTF data to return
+	 */
 	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
 	ret->size = gtf_data->size;
 	ret->data = (GTF_ROW **)calloc(ret->size, sizeof(GTF_ROW *));
+
+	/*
+	 * The GTF rows loop
+	 */
 	for (i = 0; i < ret->size; i++) {
+		/*
+		 * creates a new row, put it in the cloned gtf_data, and fill it
+		 */
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 		ret->data[i] = row;
 		row->rank = gtf_data->data[i]->rank;
 		row->attributes.nb = gtf_data->data[i]->attributes.nb;
+
+		/*
+		 * make the rows linked list at the same time
+		 */
+		if (i > 0) ret->data[i - 1]->next = row;
+
+		/*
+		 * creates the attributes table
+		 */
 		row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
+
+		/*
+		 * the attributes loop
+		 */
 		for (j = 0; j < gtf_data->data[i]->attributes.nb; j++) {
+			/*
+			 * create an attribute in the attributes table of the row and fill it
+			 */
 			row->attributes.attr[j] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
 			row->attributes.attr[j]->value = strdup(gtf_data->data[i]->attributes.attr[j]->value);
 			row->attributes.attr[j]->key = strdup(gtf_data->data[i]->attributes.attr[j]->key);
+
+			/*
+			 * make the attributes linked list at the same time
+			 */
 			if (j > 0) row->attributes.attr[j - 1]->next = row->attributes.attr[j];
 		}
+		/*
+		 * copy the 8 first columns values
+		 */
 		row->field = (char **)calloc(8, sizeof(char*));
 		for (j = 0; j < 8; j++) row->field[j] = strdup(gtf_data->data[i]->field[j]);
 	}
-	update_linked_list(ret);
+
 	return ret;
 }
 

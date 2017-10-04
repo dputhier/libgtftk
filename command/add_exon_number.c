@@ -7,6 +7,9 @@
 
 #include "libgtftk.h"
 
+/*
+ * external functions declaration
+ */
 extern void add_attribute(GTF_ROW *row, char *key, char *value);
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern GTF_DATA *clone(GTF_DATA *gtf_data);
@@ -20,27 +23,28 @@ extern COLUMN **column;
  * We need some local variables because the research is made with the twalk
  * mechanism (tree browsing) in a separate function (action_aen) with
  * restricted arguments.
- * 	gtf_d:				a local copy of the GTF_DATA to process
+ * 	gtf_d:			a local copy of the GTF_DATA to process
+ * 	sort_row:		a table of exon rows to sort to get their ranks
+ * 	nb_sort_row:	the number of rows in the sort_row table
+ * 	enf:			the name of the attribute
  */
 GTF_DATA *gtf_d;
-
-/*
- *
- */
 SORT_ROW *sort_row;
 int nb_sort_row;
+char *enf;
 
 /*
- *
+ * the comparison function for SORT_ROW structures. Used to sort the exon rows
+ * of each transcript to get their rank, based on the genomic locations
  */
-int *compare_sort_row(const void *r1, const void *r2) {
+int compare_sort_row(const void *r1, const void *r2) {
 	SORT_ROW *sr1 = (SORT_ROW *)r1;
 	SORT_ROW *sr2 = (SORT_ROW *)r2;
 	return sr1->value - sr2->value;
 }
 
 /*
- * The comparison function used by twalk.
+ * The tree parsing function used by twalk.
  * This function is used to browse an index on "transcript_id" attribute
  * containing ROW_LIST elements. For each exon line, we add an attribute called
  * exon_number to indicate the exon's rank in the transcript.
@@ -77,7 +81,7 @@ static void action_aen(const void *nodep, const VISIT which, const int depth) {
 			for (i = 0; i < nb_sort_row; i++) {
 				row = gtf_d->data[datap->row[sort_row[i].row]];
 				sprintf(tmp, "%d", i + 1);
-				add_attribute(row, "exon_number", tmp);
+				add_attribute(row, enf, tmp);
 			}
 			break;
 
@@ -86,8 +90,11 @@ static void action_aen(const void *nodep, const VISIT which, const int depth) {
 	}
 }
 
+/*
+ *
+ */
 __attribute__ ((visibility ("default")))
-GTF_DATA *add_exon_number(GTF_DATA *gtf_data) {
+GTF_DATA *add_exon_number(GTF_DATA *gtf_data, char *exon_number_field) {
 	/*
 	 * copy the initial GTF data
 	 */
@@ -105,11 +112,17 @@ GTF_DATA *add_exon_number(GTF_DATA *gtf_data) {
 	gtf_d = ret;
 	nb_sort_row = 0;
 	sort_row = NULL;
+	if (exon_number_field != NULL)
+		enf = strdup(exon_number_field);
+	else
+		enf = strdup("exon_number");
 
 	/*
 	 * tree browsing of the transcript_id index
 	 */
 	twalk(column[ix->column]->index[ix->index_rank].data, action_aen);
+
+	free(enf);
 
 	return ret;
 }
