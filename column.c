@@ -164,7 +164,7 @@ COLUMN *make_column(char type, int i, void *dv, char *name) {
  * needs to index only "gene_biotype" attribute. This function is called by
  * loadGTF function, the first function a client should call to use the library.
  */
-void make_columns() {
+void make_columns(void) {
 	nb_column = 9;
 	column = (COLUMN **)calloc(nb_column, sizeof(COLUMN *));
 	column[0] = make_column('S', 0, ".", "seqid");

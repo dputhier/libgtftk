@@ -22,7 +22,7 @@ extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
 /*
  * external functions in column.c
  */
-extern void make_columns();
+extern void make_columns(void);
 extern void make_index(INDEX_ID **p_index_id, char *key);
 extern void index_row(int row_nb, char *value, INDEX *index);
 

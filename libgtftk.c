@@ -20,7 +20,7 @@
 #include "libgtftk.h"
 
 extern void print_row(FILE *output, GTF_ROW *r, char delim, int add_chr);
-extern int update_linked_list(GTF_DATA *gtf_data);
+//extern int update_linked_list(GTF_DATA *gtf_data);
 
 /*
  * This is a pointer on the column model of a GTF file. It is initialized by
