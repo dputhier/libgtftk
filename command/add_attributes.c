@@ -48,12 +48,13 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 		*strchr(buffer, '\t') = 0;
 		test_row_list->token = value;
 		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[ix->column]->index[ix->index_rank].data), compare_row_list);
-		if (find_row_list != NULL)
+		if (find_row_list != NULL) {
 			for (i = 0; i < (*find_row_list)->nb_row; i++) {
 				row = ret->data[(*find_row_list)->row[i]];
 				if (!strcmp(features, "*") || strstr(features, row->field[2]))
 					add_attribute(row, new_key, new_value);
 			}
+		}
 	}
 	if (test_row_list != NULL) {
 		if (test_row_list->row != NULL) free(test_row_list->row);

@@ -329,7 +329,7 @@ GTF_DATA *clone(GTF_DATA *gtf_data) {
 		/*
 		 * the attributes loop
 		 */
-		for (j = 0; j < gtf_data->data[i]->attributes.nb; j++) {
+		for (j = 0; j < row->attributes.nb; j++) {
 			/*
 			 * create an attribute in the attributes table of the row and fill it
 			 */
@@ -345,7 +345,7 @@ GTF_DATA *clone(GTF_DATA *gtf_data) {
 		/*
 		 * copy the 8 first columns values
 		 */
-		row->field = (char **)calloc(8, sizeof(char*));
+		row->field = (char **)calloc(8, sizeof(char *));
 		for (j = 0; j < 8; j++) row->field[j] = strdup(gtf_data->data[i]->field[j]);
 	}
 

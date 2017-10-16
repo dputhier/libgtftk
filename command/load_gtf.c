@@ -490,6 +490,5 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
 		}
 	}
-
 	return index_id;
 }
