@@ -17,7 +17,7 @@ extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern char *get_attribute_value(GTF_ROW *row, char *attr);
 extern int update_row_table(GTF_DATA *gtf_data);
 extern void add_attribute(GTF_ROW *row, char *key, char *value);
-extern GTF_DATA *clone(GTF_DATA *gtf_data);
+extern GTF_DATA *clone_gtf_data(GTF_DATA *gtf_data);
 
 /*
  * global variables declaration
@@ -210,7 +210,7 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
 	/*
 	 * reserve memory for the GTF_DATA structure to return
 	 */
-	GTF_DATA *ret = clone(gtf_data);
+	GTF_DATA *ret = clone_gtf_data(gtf_data);
 
 	/*
 	 * indexing the gtf with transcript_id

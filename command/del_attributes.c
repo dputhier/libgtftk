@@ -10,7 +10,7 @@
 /*
  * external functions declaration
  */
-extern GTF_DATA *clone(GTF_DATA *gtf_data);
+extern GTF_DATA *clone_gtf_data(GTF_DATA *gtf_data);
 extern int update_attribute_table(GTF_ROW * row);
 
 __attribute__ ((visibility ("default")))
@@ -20,7 +20,7 @@ GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys) {
 	/*
 	 * reserve memory for the GTF_DATA structure to return
 	 */
-	GTF_DATA *ret = clone(gtf_data);
+	GTF_DATA *ret = clone_gtf_data(gtf_data);
 
 	GTF_ROW *row;
 

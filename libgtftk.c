@@ -293,7 +293,7 @@ int free_mem(char *ptr) {
  * make a clone of the input GTF data and perform the annotation on the clone,
  * leaving the initial data unchanged.
  */
-GTF_DATA *clone(GTF_DATA *gtf_data) {
+GTF_DATA *clone_gtf_data(GTF_DATA *gtf_data) {
 	int i, j;
 	GTF_ROW *row;
 
