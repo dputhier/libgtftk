@@ -12,7 +12,7 @@
  */
 extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
-extern GTF_DATA *clone(GTF_DATA *gtf_data);
+extern GTF_DATA *clone_gtf_data(GTF_DATA *gtf_data);
 extern void add_attribute(GTF_ROW *row, char *key, char *value);
 
 /*
@@ -26,7 +26,7 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 	/*
 	 * allocating memory for the GTF_DATA structure to return
 	 */
-	GTF_DATA *ret = clone(gtf_data);
+	GTF_DATA *ret = clone_gtf_data(gtf_data);
 
 	/*
 	 * indexing the gtf with key
