@@ -120,7 +120,7 @@ GTF_DATA *add_exon_number(GTF_DATA *gtf_data, char *exon_number_field) {
 	/*
 	 * tree browsing of the transcript_id index
 	 */
-	twalk(column[ix->column]->index[ix->index_rank].data, action_aen);
+	twalk(column[ix->column]->index[ix->index_rank]->data, action_aen);
 
 	free(enf);
 

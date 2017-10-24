@@ -60,14 +60,17 @@ void print_attributes(void *token, FILE *output, void *col, char delim) {
 	}
 }
 
-void make_index(INDEX_ID **p_index_id, char *key) {
-	column[(*p_index_id)->column]->nb_index++;
-	column[(*p_index_id)->column]->index = (INDEX *)realloc(column[(*p_index_id)->column]->index, column[(*p_index_id)->column]->nb_index * sizeof(INDEX));
-	INDEX *index = column[(*p_index_id)->column]->index + column[(*p_index_id)->column]->nb_index - 1;
+void make_index(INDEX_ID *index_id, char *key) {
+	column[index_id->column]->nb_index++;
+	column[index_id->column]->index = (INDEX **)realloc(column[index_id->column]->index, column[index_id->column]->nb_index * sizeof(INDEX *));
+	INDEX *index = (INDEX *)calloc(1, sizeof(INDEX));
+	column[index_id->column]->index[column[index_id->column]->nb_index - 1] = index;
 	index->data = NULL;
 	index->gtf_data = NULL;
 	index->key = strdup(key);
-	(*p_index_id)->index_rank = column[(*p_index_id)->column]->nb_index - 1;
+	index_id->index_rank = column[index_id->column]->nb_index - 1;
+	if (column[index_id->column]->nb_index > 1)
+		column[index_id->column]->index[column[index_id->column]->nb_index - 2]->next = index;
 }
 
 /*
@@ -83,8 +86,8 @@ void index_row(int row_nb, char *value, INDEX *index) {
 
 	if (index != NULL) {
 		// build a ROW_LIST to check if value is already indexed
-
 		test_row_list = calloc(1, sizeof(ROW_LIST));
+
 		test_row_list->token = value;
 		//fprintf(stderr, "ho\n");
 		find_row_list = tfind(test_row_list, &(index->data), compare_row_list);

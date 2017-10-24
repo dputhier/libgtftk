@@ -23,7 +23,7 @@ extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
  * external functions in column.c
  */
 extern void make_columns(void);
-extern void make_index(INDEX_ID **p_index_id, char *key);
+extern void make_index(INDEX_ID *index_id, char *key);
 extern void index_row(int row_nb, char *value, INDEX *index);
 
 /*
@@ -50,9 +50,9 @@ extern int nb_column;
 int add_index(char *key, GTF_DATA *gtf_data) {
 	column[8]->nb_index++;
 	column[8]->index = realloc(column[8]->index, column[8]->nb_index * sizeof(INDEX));
-	column[8]->index[column[8]->nb_index - 1].key = strdup(key);
-	column[8]->index[column[8]->nb_index - 1].data = NULL;
-	column[8]->index[column[8]->nb_index - 1].gtf_data = gtf_data;
+	column[8]->index[column[8]->nb_index - 1]->key = strdup(key);
+	column[8]->index[column[8]->nb_index - 1]->data = NULL;
+	column[8]->index[column[8]->nb_index - 1]->gtf_data = gtf_data;
 	return column[8]->nb_index - 1;
 }
 
@@ -398,7 +398,7 @@ INDEX_ID *get_index(GTF_DATA *gtf_data, char *key) {
 			 */
 			ret->column = c;
 			for (k = 0; k < column[c]->nb_index; k++)
-				if ((column[c]->index[k].data != NULL) && (column[c]->index[k].gtf_data == gtf_data)) {
+				if ((column[c]->index[k]->data != NULL) && (column[c]->index[k]->gtf_data == gtf_data)) {
 					ret->index_rank = k;
 					break;
 				}
@@ -416,13 +416,13 @@ INDEX_ID *get_index(GTF_DATA *gtf_data, char *key) {
 			 * if an index on this parameter exists and correspond to the
 			 * gtf_data parameter, we return it
 			 */
-			if (!strcmp(column[8]->index[c].key, key)) {
+			if (!strcmp(column[8]->index[c]->key, key)) {
 				/*
 				 * key is the name of a parameter
 				 * if an index on this parameter exists and correspond to the
 				 * gtf_data parameter, we return it
 				 */
-				if ((column[8]->index[c].data != NULL) && (column[8]->index[c].gtf_data == gtf_data)) {
+				if ((column[8]->index[c]->data != NULL) && (column[8]->index[c]->gtf_data == gtf_data)) {
 					ret->index_rank = c;
 					break;
 				}
@@ -459,7 +459,7 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 		/*
 		 * make a new index and add it in the corresponding column
 		 */
-		make_index(&index_id, key);
+		make_index(index_id, key);
 
 		/*
 		 * index is to be made on a column
@@ -470,8 +470,8 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 			 * reference on the GTF data in the INDEX
 			 */
 			for (k = 0; k < gtf_data->size; k++)
-				index_row(k, gtf_data->data[k]->field[index_id->column], column[index_id->column]->index + index_id->index_rank);
-			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
+				index_row(k, gtf_data->data[k]->field[index_id->column], column[index_id->column]->index[index_id->index_rank]);
+			column[index_id->column]->index[index_id->index_rank]->gtf_data = gtf_data;
 		}
 		/*
 		 * index is to be made on an attribute
@@ -484,10 +484,10 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 			for (k = 0; k < gtf_data->size; k++)
 				for (j = 0; j < gtf_data->data[k]->attributes.nb; j++)
 					if (!strcmp(key, gtf_data->data[k]->attributes.attr[j]->key)) {
-						index_row(k, gtf_data->data[k]->attributes.attr[j]->value, column[index_id->column]->index + index_id->index_rank);
+						index_row(k, gtf_data->data[k]->attributes.attr[j]->value, column[index_id->column]->index[index_id->index_rank]);
 						break;
 					}
-			column[index_id->column]->index[index_id->index_rank].gtf_data = gtf_data;
+			column[index_id->column]->index[index_id->index_rank]->gtf_data = gtf_data;
 		}
 	}
 	return index_id;

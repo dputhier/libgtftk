@@ -61,7 +61,6 @@ extern COLUMN **column;
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	int i, j, k, p, n = 0;
-
 	/*
 	 * reserve memory for the GTF_DATA structure to return
 	 */
@@ -102,7 +101,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		 * suppressed by add_row_list function.
 		 */
 		test_row_list->token = values[p];
-		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[index_id->column]->index[index_id->index_rank].data), compare_row_list);
+		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[index_id->column]->index[index_id->index_rank]->data), compare_row_list);
 		if (find_row_list != NULL) add_row_list(*find_row_list, row_list);
 	}
 

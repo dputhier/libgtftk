@@ -223,7 +223,7 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
 	gtf_d = ret;
 	n = nbrow = 0;
 	gtf_d0 = NULL;
-	twalk(column[tid_index->column]->index[tid_index->index_rank].data, action_transcript);
+	twalk(column[tid_index->column]->index[tid_index->index_rank]->data, action_transcript);
 	if (gtf_d0 != NULL) gtf_d->data[0] = gtf_d0;
 	ret->size = nbrow + ret->size;
 	update_row_table(ret);
@@ -238,7 +238,7 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
 	 */
 	n = nbrow = 0;
 	gtf_d0 = NULL;
-	twalk(column[gid_index->column]->index[gid_index->index_rank].data, action_gene);
+	twalk(column[gid_index->column]->index[gid_index->index_rank]->data, action_gene);
 	if (gtf_d0 != NULL) gtf_d->data[0] = gtf_d0;
 	ret->size += nbrow;
 

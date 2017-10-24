@@ -167,6 +167,12 @@ typedef struct INDEX {
 	 * a reference to the GTF_DATA on which the index has been made
 	 */
 	GTF_DATA *gtf_data;
+
+	/*
+	 * a pointer on the next index
+	 */
+	struct INDEX *next;
+
 } INDEX;
 
 typedef struct INDEX_ID {
@@ -204,11 +210,11 @@ typedef struct COLUMN {
 	char *default_value;
 
 	/*
-	 * a table of indexes. It contains only one pointer for each column except
+	 * a linked list of indexes. It contains only one pointer for each column except
 	 * the attributes column for which there is as needed indexes (one can
 	 * index data on several attributes)
 	 */
-	INDEX *index;
+	INDEX **index;
 
 	/*
 	 * the number of indexes in the previous table

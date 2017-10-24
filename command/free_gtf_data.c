@@ -7,16 +7,38 @@
 
 #include "libgtftk.h"
 
+extern int compare_row_list(const void *, const void *);
+
 /*
  * global variables in libgtftk.c
  */
 extern COLUMN **column;
 extern int nb_column;
 
+int update_index_table(COLUMN *col) {
+	INDEX *idx;
+	int i;
+
+	if (col->index != NULL) {
+		idx = col->index[0];
+		col->index = (INDEX **)realloc(col->index, col->nb_index * sizeof(INDEX *));
+		for (i = 0; i < col->nb_index; i++) {
+			col->index[i] = idx;
+			idx = idx->next;
+		}
+	}
+	return 0;
+}
+
 __attribute__ ((visibility ("default")))
 int free_gtf_data(GTF_DATA *gtf_data) {
 	int i, j, c;
 	GTF_ROW *row;
+	INDEX *pindex, *pindex0;
+	ROW_LIST *row_list;
+
+	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+	row_list->token = strdup("*");
 
 	if (gtf_data != NULL) {
 		for (i = 0; i < gtf_data->size; i++) {
@@ -34,20 +56,44 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 		}
 		free(gtf_data->data);
 		gtf_data->data = NULL;
-		free(gtf_data);
-		for (c = 0; c < (nb_column - 1); c++) {
-			for (i = 0; i < column[c]->nb_index; i++) {
-				if (column[c]->index[i].gtf_data == gtf_data) {
-					column[c]->index[i].gtf_data = NULL;
+		//fprintf(stderr, "freed %d\n", gtf_data->size);
+		for (c = 0; c < nb_column; c++) {
+			//fprintf(stderr, "  col = %s %d\n", column[c]->name, column[c]->nb_index);
+			if (column[c]->index != NULL)
+				pindex = column[c]->index[0];
+			else
+				pindex = NULL;
+			pindex0 = NULL;
+			while (pindex != NULL) {
+				if (pindex->gtf_data == gtf_data) {
+					//fprintf(stderr, "    freeing index %s\n", pindex->key);
+					tdelete(row_list, &(pindex->data), compare_row_list);
+					//fprintf(stderr, "    OK\n");
+					free(pindex->key);
+					column[c]->nb_index--;
+					if (pindex0 == NULL) {
+						pindex0 = pindex->next;
+						free(pindex);
+						pindex = pindex0;
+						pindex0 = NULL;
+					}
+					else {
+						pindex0->next = pindex->next;
+						free(pindex);
+						pindex = pindex0->next;
+					}
+				}
+				else {
+					pindex0 = pindex;
+					pindex = pindex->next;
 				}
 			}
+			update_index_table(column[c]);
 		}
-		for (c = 0; c < column[8]->nb_index; c++) {
-			if (column[8]->index[c].gtf_data == gtf_data) {
-				column[8]->index[c].gtf_data = NULL;
-			}
-		}
+		free(gtf_data);
 		gtf_data = NULL;
 	}
+	free(row_list->token);
+	free(row_list);
 	return 0;
 }

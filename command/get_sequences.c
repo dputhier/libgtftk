@@ -359,7 +359,7 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 					 * Search for transcript ID in the index
 					 */
 					test_row_list->token = get_attribute_value(row, "transcript_id");
-					find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[8]->index[trid_index_id->index_rank].data), compare_row_list);
+					find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[8]->index[trid_index_id->index_rank]->data), compare_row_list);
 
 					tr_len = 0;
 					if (find_row_list != NULL) {

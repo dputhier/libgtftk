@@ -50,7 +50,7 @@ TTEXT *get_feature_list(GTF_DATA *gtf_data) {
 	/*
 	 * tree browsing of the feature index
 	 */
-	twalk(column[index_id->column]->index[index_id->index_rank].data, action_list);
+	twalk(column[index_id->column]->index[index_id->index_rank]->data, action_list);
 
 	return vret;
 }
@@ -70,7 +70,7 @@ TTEXT *get_seqid_list(GTF_DATA *gtf_data) {
 	/*
 	 * tree browsing of the feature index
 	 */
-	twalk(column[index_id->column]->index[index_id->index_rank].data, action_list);
+	twalk(column[index_id->column]->index[index_id->index_rank]->data, action_list);
 
 	return vret;
 }
@@ -120,7 +120,7 @@ TTEXT *get_attribute_values_list(GTF_DATA *gtf_data, char *attribute) {
 	/*
 	 * tree browsing of the feature index
 	 */
-	twalk(column[index_id->column]->index[index_id->index_rank].data, action_list);
+	twalk(column[index_id->column]->index[index_id->index_rank]->data, action_list);
 
 	return vret;
 }

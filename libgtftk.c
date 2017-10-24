@@ -138,6 +138,7 @@ void split_key_value(char *s, char **key, char **value) {
 int compare_row_list(const void *p1, const void *p2) {
 	ROW_LIST *rl1 = ((ROW_LIST *)p1);
 	ROW_LIST *rl2 = ((ROW_LIST *)p2);
+	if (!strcmp(rl1->token, "*") || !strcmp(rl2->token, "*")) return 0;
 	return strcmp(rl1->token, rl2->token);
 }
 

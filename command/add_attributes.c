@@ -47,7 +47,7 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 		if (*(new_value + strlen(new_value) - 1) == '\n') *(new_value + strlen(new_value) - 1) = 0;
 		*strchr(buffer, '\t') = 0;
 		test_row_list->token = value;
-		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[ix->column]->index[ix->index_rank].data), compare_row_list);
+		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[ix->column]->index[ix->index_rank]->data), compare_row_list);
 		if (find_row_list != NULL) {
 			for (i = 0; i < (*find_row_list)->nb_row; i++) {
 				row = ret->data[(*find_row_list)->row[i]];

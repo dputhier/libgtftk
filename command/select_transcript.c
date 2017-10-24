@@ -151,7 +151,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 							 * to get all the rows related to it
 							 */
 							row_list->token = row->attributes.attr[j]->value;
-							find_row_list = (ROW_LIST **)tfind(row_list, &(column[8]->index[tid_index->index_rank].data), compare_row_list);
+							find_row_list = (ROW_LIST **)tfind(row_list, &(column[8]->index[tid_index->index_rank]->data), compare_row_list);
 							if (find_row_list != NULL) {
 								trsize = 0;
 
@@ -250,7 +250,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 			/*
 			 * get transcript rows
 			 */
-			find_row_list = tfind(test_row_list, &(column[8]->index[tid_index->index_rank].data), compare_row_list);
+			find_row_list = tfind(test_row_list, &(column[8]->index[tid_index->index_rank]->data), compare_row_list);
 
 			/*
 			 * we add the gene and transcript rows in the row_list structure
@@ -301,7 +301,7 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	test_row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
 
 	// tree browsing of the gene_id index (rank 0)
-	twalk(column[8]->index[gid_index->index_rank].data, action_st);
+	twalk(column[8]->index[gid_index->index_rank]->data, action_st);
 
 	/*
 	 * we sort the resulting row list to respect the original order of the

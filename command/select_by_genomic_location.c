@@ -68,7 +68,7 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 		 * Find all rows related to the given chromosome
 		 */
 		test_row_list->token = chr[k];
-		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[0]->index[seqid_index_id->index_rank].data), compare_row_list);
+		find_row_list = (ROW_LIST **)tfind(test_row_list, &(column[0]->index[seqid_index_id->index_rank]->data), compare_row_list);
 		if (find_row_list != NULL) {
 			for (j = 0; j < (*find_row_list)->nb_row; j++) {
 				/*
