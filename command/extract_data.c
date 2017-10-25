@@ -51,11 +51,12 @@ int is_in_columns(char *col) {
  * 		key:		the list of column names and attribute names that are to be
  * 					extracted (separated by "," character)
  * 		base:		0 or 1 : 0-based or 1-based data
+ * 		uniq:		0 or 1 : keep or discard redundant rows in results
  *
  * Returns:			a matrix of strings, packed into a RAW_DATA structure
  */
 __attribute__ ((visibility ("default")))
-RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
+RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base/*, int uniq*/) {
 	/*
 	 * Declaration and reservation of the structure to be returned
 	 */
@@ -67,9 +68,24 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 	int i, k, n, j;
 
 	/*
+	 * number of rows in results, after removing duplicates if needed
+	 */
+	int nb_results_rows;
+
+	/*
 	 * The list of all attributes in the given GTF_DATA
 	 */
 	STRING_LIST *attributes;
+
+	/*
+	 * hashtable used to discard redundant rows if uniq parameter is set to 1
+	 */
+	void *hash = NULL;
+
+	/*
+	 * a string list to look for i the hashtable
+	 */
+	STRING_LIST *row;
 
 	/*
 	 * if key is "all", we extract ALL the data in the GTF_DATA
@@ -109,13 +125,19 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 	ret->nb_rows = gtf_data->size;
 
 	/*
+	 * initialize nb_result_rows, should contain the real size of the results
+	 */
+	nb_results_rows = 0;
+
+	/*
 	 * The loop on the rows of GTF_DATA
 	 */
 	for (k = 0; k < gtf_data->size; k++) {
+		nb_results_rows = k;
 		/*
 		 * reserve the memory for the corresponding result row
 		 */
-		ret->data[k] = (char **)calloc(ret->nb_columns, sizeof(char *));
+		ret->data[nb_results_rows] = (char **)calloc(ret->nb_columns, sizeof(char *));
 
 		/*
 		 * The loop on the columns and attributes to extract
@@ -129,32 +151,46 @@ RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base) {
 				/*
 				 * do a copy of the field, as it may be altered
 				 */
-				ret->data[k][i] = strdup(gtf_data->data[k]->field[n]);
+				ret->data[nb_results_rows][i] = strdup(gtf_data->data[nb_results_rows]->field[n]);
 
 				/*
 				 * if we want data 0-based, we must remove 1 from the start
 				 * value
 				 */
 				if (!strcmp(ret->column_name[i], "start") && !base) {
-					j = atoi(ret->data[k][i]) - 1;
-					sprintf(ret->data[k][i], "%d", j);
+					j = atoi(ret->data[nb_results_rows][i]) - 1;
+					sprintf(ret->data[nb_results_rows][i], "%d", j);
 				}
 			}
 
 			/*
 			 * attribute extraction
 			 */
-			else if ((n = is_in_attrs(gtf_data->data[k], ret->column_name[i])) != -1)
-				ret->data[k][i] = strdup(gtf_data->data[k]->attributes.attr[n]->value);
+			else if ((n = is_in_attrs(gtf_data->data[nb_results_rows], ret->column_name[i])) != -1)
+				ret->data[nb_results_rows][i] = strdup(gtf_data->data[nb_results_rows]->attributes.attr[n]->value);
 
 			/*
 			 * not a column and not an attribute ! (some attributes are not
 			 * present in all the rows of a GTF_DATA)
 			 */
 			else
-				ret->data[k][i] = strdup(".");
+				ret->data[nb_results_rows][i] = strdup(".");
 		}
+		/*
+		 * put the line in a hashtable to allow removing of doubles
+		 */
+		/*if (uniq) {
+			row = NULL;
+			tfind(row, &hash, compare_string_list);
+		}*/
 	}
+
+	/*
+	 * destroy rows hashtable if needed
+	 */
+	/*if (uniq) {
+
+	}*/
 
 	/*
 	 * Returns the extracted data

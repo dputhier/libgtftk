@@ -30,6 +30,7 @@ int update_index_table(COLUMN *col) {
 	return 0;
 }
 
+
 __attribute__ ((visibility ("default")))
 int free_gtf_data(GTF_DATA *gtf_data) {
 	int i, j, c;
@@ -74,12 +75,16 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 					if (pindex0 == NULL) {
 						pindex0 = pindex->next;
 						free(pindex);
+						if (pindex == column[c]->index[0])
+							column[c]->index[0] = pindex0;
 						pindex = pindex0;
 						pindex0 = NULL;
 					}
 					else {
 						pindex0->next = pindex->next;
 						free(pindex);
+						if (pindex == column[c]->index[0])
+							column[c]->index[0] = pindex0->next;
 						pindex = pindex0->next;
 					}
 				}

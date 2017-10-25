@@ -143,6 +143,25 @@ int compare_row_list(const void *p1, const void *p2) {
 }
 
 /*
+ * This function is used by the C tsearch and tfind functions to search and
+ * add STRING_LIST elements in a hashtable for removing duplicates rows in
+ * extract_data function.
+ */
+int compare_string_list(const void *p1, const void *p2) {
+	STRING_LIST *sl1 = ((STRING_LIST *)p1);
+	STRING_LIST *sl2 = ((STRING_LIST *)p2);
+	int i;
+
+	if (sl1->nb == sl2->nb) {
+		for (i = 0; i < sl1->nb; i++)
+			if (strcmp(sl1->list[i], sl2->list[i]))
+				return 1;
+		return 0;
+	}
+	return 1;
+}
+
+/*
  * This function is used by the C qsort function to sort a table of integers
  * representing rows in a GTF file. As some operations can modify the order of
  * the rows in the results, this function is used to be sure to output the

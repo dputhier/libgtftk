@@ -271,7 +271,8 @@ typedef struct RAW_DATA {
 
 /*
  * This structure is used to store a list of strings. Useful as a function
- * return type like get_attribute_list in get_list.c source file.
+ * return type like get_attribute_list in get_list.c source file. Also used as
+ * hashtable elements to discard redundant rows in extract_data.
  */
 typedef struct STRING_LIST {
 	/*
