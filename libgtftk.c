@@ -152,13 +152,14 @@ int compare_string_list(const void *p1, const void *p2) {
 	STRING_LIST *sl2 = ((STRING_LIST *)p2);
 	int i;
 
+	//fprintf(stderr, "comparing (%s,%s) with (%s,%s)\n", sl1->list[0], sl1->list[1], sl2->list[0], sl2->list[1]);
 	if (sl1->nb == sl2->nb) {
 		for (i = 0; i < sl1->nb; i++)
 			if (strcmp(sl1->list[i], sl2->list[i]))
-				return 1;
+				return strcmp(sl1->list[i], sl2->list[i]);
 		return 0;
 	}
-	return 1;
+	return sl1->nb - sl2->nb;
 }
 
 /*

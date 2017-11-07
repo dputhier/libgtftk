@@ -337,7 +337,7 @@ void print_gtf_data(GTF_DATA *gtf_data, char *output, int add_chr);
 GTF_DATA *select_by_transcript_size(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_number_of_exon(GTF_DATA *gtf_data, int min, int max);
 GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr, int *begin_gl, int *end_gl);
-RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base);
+RAW_DATA *extract_data(GTF_DATA *gtf_data, char *key, int base, int uniq);
 void print_raw_data(RAW_DATA *raw_data, char delim, char *output);
 GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type);
 SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int rc);
