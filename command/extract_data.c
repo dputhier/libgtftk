@@ -25,6 +25,11 @@ extern int compare_string_list(const void *p1, const void *p2);
 extern COLUMN **column;
 extern int nb_column;
 
+/*
+ * This function is called by twalk on the hashtable used to remove redundant
+ * rows in the result when uniq parameter is 1. As the tdestroy function is not
+ * available in OS X, we must do the job !!!
+ */
 static void destroy_string_list_tree(const void *nodep, const VISIT which, const int depth) {
 	STRING_LIST *sl = *(STRING_LIST **)nodep;
 	int i;
@@ -34,25 +39,11 @@ static void destroy_string_list_tree(const void *nodep, const VISIT which, const
 			break;
 		case postorder:
 			break;
-		case leaf:
-			//fprintf(stderr, "freeing %d ", sl->nb);
-			//fprintf(stderr, "%s", sl->list[0]);
-			//fprintf(stderr, "-%s ...", sl->list[1]);
-			for (i = 0; i < sl->nb; i++) free(sl->list[i]);
-			//sl->nb = 0;
-			free(sl->list);
-			free(sl);
-			//fprintf(stderr, " OK\n");
-			break;
 		case endorder:
-			//fprintf(stderr, "freeing %d ", sl->nb);
-			//fprintf(stderr, "%s", sl->list[0]);
-			//fprintf(stderr, "-%s ...", sl->list[1]);
+		case leaf:
 			for (i = 0; i < sl->nb; i++) free(sl->list[i]);
-			//sl->nb = 0;
 			free(sl->list);
 			free(sl);
-			//fprintf(stderr, " OK\n");
 			break;
 	}
 }

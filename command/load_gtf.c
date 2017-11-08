@@ -219,11 +219,13 @@ GTF_DATA *load_GTF(char *input) {
 			/*
 			 * split the row and check the number of fields (should be 9)
 			 */
-			if (split_ip(&token, buffer, "\t") != nb_column) {
+			i = split_ip(&token, buffer, "\t");
+			if (i != nb_column) {
 				if (!strcmp(gr->filename, "-"))
 					fprintf(stderr, "ERROR : standard input is not a valid GTF stream\n");
 				else
-					fprintf(stderr, "ERROR : GTF file %s is not valid\n", gr->filename);
+					fprintf(stderr, "ERROR : GTF file %s is not valid (%d columns)\n", gr->filename, i);
+
 				exit(0);
 			}
 

@@ -51,8 +51,7 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 				row = gtf_d->data[datap->row[i]];
 
 				// the current feature value
-				feature = row->field[2
-									 ];
+				feature = row->field[2];
 				if (!strcmp(feature, "transcript")) {
 					ok = 1;
 					break;
@@ -206,7 +205,6 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
-
 	/*
 	 * reserve memory for the GTF_DATA structure to return
 	 */

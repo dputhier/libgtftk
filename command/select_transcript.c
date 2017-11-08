@@ -256,7 +256,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 			 * we add the gene and transcript rows in the row_list structure
 			 */
 			add_row_list(*find_row_list, row_list);
-			add_row(r, row_list);
+			if (r != -1) add_row(r, row_list);
 			break;
 
 		case endorder:
@@ -316,11 +316,13 @@ GTF_DATA *select_transcript(GTF_DATA *gtf_data, int type) {
 	GTF_ROW *row, *previous_row = NULL;
 	for (i = 0; i < row_list->nb_row; i++) {
 		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-				row->field = (char **)calloc(8, sizeof(char *));
+		row->field = (char **)calloc(8, sizeof(char *));
 		if (i == 0) ret->data[0] = row;
+
 		for (k = 0; k < gtf_data->data[row_list->row[i]]->attributes.nb; k++)
 			add_attribute(row, gtf_data->data[row_list->row[i]]->attributes.attr[k]->key,
-					gtf_data->data[row_list->row[i]]->attributes.attr[k]->value);
+				gtf_data->data[row_list->row[i]]->attributes.attr[k]->value);
+
 		for (k = 0; k < 8; k++)
 			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
 		row->rank = gtf_data->data[row_list->row[i]]->rank;

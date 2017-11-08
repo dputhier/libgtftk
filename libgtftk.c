@@ -20,7 +20,6 @@
 #include "libgtftk.h"
 
 extern void print_row(FILE *output, GTF_ROW *r, char delim, int add_chr);
-//extern int update_linked_list(GTF_DATA *gtf_data);
 
 /*
  * This is a pointer on the column model of a GTF file. It is initialized by
@@ -34,12 +33,6 @@ COLUMN **column;
  * file.
  */
 int nb_column;
-
-/*
- * A variable used to count the elements in a index with the twalk C function.
- * Used in action_nb function in this file.
- */
-int N;
 
 /*
  * This function splits a character string (s) into a table of words (*tab),
@@ -143,16 +136,14 @@ int compare_row_list(const void *p1, const void *p2) {
 }
 
 /*
- * This function is used by the C tsearch and tfind functions to search and
- * add STRING_LIST elements in a hashtable for removing duplicates rows in
- * extract_data function.
+ * This function is used by the C tsearch function to search and add STRING_LIST
+ * elements in a hashtable for removing duplicates rows in extract_data.
  */
 int compare_string_list(const void *p1, const void *p2) {
 	STRING_LIST *sl1 = ((STRING_LIST *)p1);
 	STRING_LIST *sl2 = ((STRING_LIST *)p2);
 	int i;
 
-	//fprintf(stderr, "comparing (%s,%s) with (%s,%s)\n", sl1->list[0], sl1->list[1], sl2->list[0], sl2->list[1]);
 	if (sl1->nb == sl2->nb) {
 		for (i = 0; i < sl1->nb; i++)
 			if (strcmp(sl1->list[i], sl2->list[i]))
