@@ -31,6 +31,27 @@ extern int update_row_table(GTF_DATA *gtf_data);
 extern COLUMN **column;
 
 /*
+ * global variables
+ */
+ROW_LIST *all_rows = NULL;
+
+static void get_all_rows(const void *nodep, const VISIT which, const int depth) {
+	ROW_LIST *rl = *(ROW_LIST **)nodep;
+
+	switch (which) {
+		case preorder:
+			break;
+		case postorder:
+			break;
+		case endorder:
+		case leaf:
+			add_row_list(rl, all_rows);
+			break;
+	}
+}
+
+
+/*
  * select_by_key function selects rows in GTF_DATA that contains some given
  * value(s) for a column or an attribute. For instance:
  *  - to get all "gene" and "transcript" rows:
@@ -95,7 +116,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 
 	for (p = 0; p < nb_value; p++) {
 		/*
-		 * for each value, we look for it in the kth index of the ith column
+		 * for each value, we look for it in the index returned by index_gtf
 		 * and if we find it, we merge (add_row_list) the returned ROW_LIST
 		 * (find_row_list) with the final one (row_list). Duplicates are
 		 * suppressed by add_row_list function.
@@ -151,12 +172,23 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 		}
 	}
 	else {
+		all_rows = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+		if (not == 2) {
+			twalk(column[index_id->column]->index[index_id->index_rank]->data, get_all_rows);
+			qsort(all_rows->row, all_rows->nb_row, sizeof(int), comprow);
+		}
+		else {
+			all_rows->row = (int *)calloc(gtf_data->size, sizeof(int));
+			all_rows->nb_row = gtf_data->size;
+			for (i = 0; i < all_rows->nb_row; i++) all_rows->row[i] = i;
+		}
+
 		/*
 		 * if the query was negative, we want to keep all the rows that are NOT
 		 * in row_list, so the size of the result is the difference between the
 		 * total number of rows and the number of rows in row_list
 		 */
-		ret->size = gtf_data->size - row_list->nb_row;
+		ret->size = all_rows->nb_row - row_list->nb_row;
 
 		/*
 		 * we reserve memory for the first row in the table of rows
@@ -171,29 +203,30 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 			row_list->row = (int *)calloc(1, sizeof(int));
 			row_list->row[0] = gtf_data->size + 1;
 		}
-		for (k = 0; k < gtf_data->size; k++) {
-			if (k < row_list->row[j]) {
+
+		for (k = 0; k < all_rows->nb_row; k++) {
+			if (all_rows->row[k] < row_list->row[j]) {
 				row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 				if (n == 0) ret->data[0] = row;
 				row->field = (char **)calloc(8, sizeof(char*));
-				for (i = 0; i < 8; i++) row->field[i] = strdup(gtf_data->data[k]->field[i]);
-				row->attributes.nb = gtf_data->data[k]->attributes.nb;
+				for (i = 0; i < 8; i++) row->field[i] = strdup(gtf_data->data[all_rows->row[k]]->field[i]);
+				row->attributes.nb = gtf_data->data[all_rows->row[k]]->attributes.nb;
 				row->attributes.attr = (ATTRIBUTE **)calloc(row->attributes.nb, sizeof(ATTRIBUTE *));
 				for (i = 0; i < row->attributes.nb; i++) {
 					row->attributes.attr[i] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
-					row->attributes.attr[i]->key = strdup(gtf_data->data[k]->attributes.attr[i]->key);
-					row->attributes.attr[i]->value = strdup(gtf_data->data[k]->attributes.attr[i]->value);
+					row->attributes.attr[i]->key = strdup(gtf_data->data[all_rows->row[k]]->attributes.attr[i]->key);
+					row->attributes.attr[i]->value = strdup(gtf_data->data[all_rows->row[k]]->attributes.attr[i]->value);
 				}
-				row->rank = gtf_data->data[k]->rank;
+				row->rank = gtf_data->data[all_rows->row[k]]->rank;
 				if (n > 0) previous_row->next = row;
 				previous_row = row;
 				n++;
 			}
-			else if (k == row_list->row[j])
+			else if (all_rows->row[k] == row_list->row[j])
 				j++;
 		}
 		if (n != ret->size) {
-			for (k = row_list->row[row_list->nb_row - 1] + 1; k < gtf_data->size; k++) {
+			for (k = row_list->row[row_list->nb_row - 1] + 1; k <= all_rows->row[all_rows->nb_row - 1]; k++) {
 				row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
 				if (n == 0) ret->data[0] = row;
 				row->field = (char **)calloc(8, sizeof(char*));
@@ -216,7 +249,10 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	update_row_table(ret);
 	free(values);
 	free(test_row_list);
+	free(row_list->row);
 	free(row_list);
+	free(all_rows->row);
+	free(all_rows);
 
 	return ret;
 }

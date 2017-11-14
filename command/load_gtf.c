@@ -480,7 +480,7 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 		 */
 		else {
 			/*
-			 * indexes all the rows of the GTF data with aan attribute and put a
+			 * indexes all the rows of the GTF data with an attribute and put a
 			 * reference on the GTF data in the INDEX
 			 */
 			for (k = 0; k < gtf_data->size; k++)
