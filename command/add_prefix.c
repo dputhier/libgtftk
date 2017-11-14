@@ -19,7 +19,6 @@ extern int update_attribute_table(GTF_ROW * row);
  */
 extern COLUMN **column;
 
-
 __attribute__ ((visibility ("default")))
 GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, int suffix) {
 	int i, ok;
@@ -55,6 +54,9 @@ GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, i
 		if (!ok) ok = (strstr(features, row->field[2]) != NULL);
 		if (ok) {
 
+			/* if target_field contains -1 will will check extended attributes
+			 * else we will modify basic attributes.
+			 * */
 			if(target_field >= 0){
 				char *str_concat = malloc(strlen(txt) + strlen(row->field[target_field]) + 1);
 				if(suffix){
