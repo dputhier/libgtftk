@@ -102,6 +102,7 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 						if (pindex == column[c]->index[0]) column[c]->index[0] = pindex0->next;
 						pindex = pindex0->next;
 					}
+					update_index_table(column[c]);
 				}
 				else {
 					pindex0 = pindex;
