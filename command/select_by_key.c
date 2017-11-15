@@ -170,6 +170,7 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 			if (j > 0) previous_row->next = row;
 			previous_row = row;
 		}
+		update_row_table(ret);
 	}
 	else {
 		all_rows = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
@@ -245,15 +246,15 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 			}
 		}
 	}
-
 	update_row_table(ret);
 	free(values);
 	free(test_row_list);
 	free(row_list->row);
 	free(row_list);
-	free(all_rows->row);
-	free(all_rows);
-
+	if (all_rows != NULL) {
+		if (all_rows->row != NULL) free(all_rows->row);
+		free(all_rows);
+	}
 	return ret;
 }
 

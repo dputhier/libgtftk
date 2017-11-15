@@ -18,6 +18,7 @@ extern int update_attribute_table(GTF_ROW * row);
  * global variables declaration
  */
 extern COLUMN **column;
+extern int nb_column;
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, int suffix) {
@@ -25,7 +26,7 @@ GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, i
 	int target_field = -1;
 
 	/* The list of basic attributes*/
-	char * basic_attr [] = { "seqid", "source", "feature", "start", "end", "score", "strand", "frame" };
+	//char * basic_attr [] = { "seqid", "source", "feature", "start", "end", "score", "strand", "frame" };
 	if(strcmp(key, "chrom") == 0)
 		key = "seqid";
 	/*
@@ -40,8 +41,9 @@ GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, i
 
 	/* Check whether we want to add a prefix/suffix to a basic attribute */
 
-	for(i = 0; i < 8; ++i){
-	    if(!strcmp(basic_attr[i], key))
+	for (i = 0; i < nb_column; i++) {
+	//for(i = 0; i < 8; ++i){
+	    if(!strcmp(/*basic_attr[i]*/ column[i]->name, key))
 	    {
 	    	target_field = i;
 	    	break;
