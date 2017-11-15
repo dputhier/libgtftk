@@ -355,6 +355,6 @@ GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys);
 GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size);
 GTF_DATA *add_exon_number(GTF_DATA *gtf_data, char *exon_number_field);
 GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, int suffix);
-
+GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_key, char *sep);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */
