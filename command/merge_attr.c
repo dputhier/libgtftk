@@ -123,12 +123,13 @@ GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_
 
 				}
 
-					add_attribute(row, dest_key, str_concat);
+
 
 				pattr = pattr->next;
 
 			}
 
+			add_attribute(row, dest_key, str_concat);
 		}
 
 		update_attribute_table(row);
