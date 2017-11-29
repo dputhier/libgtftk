@@ -76,17 +76,17 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 		gtf_data->data = NULL;
 		//fprintf(stderr, "freed %d\n", gtf_data->size);
 		for (c = 0; c < nb_column; c++) {
-			fprintf(stderr, "  col = %s %d\n", column[c]->name, column[c]->nb_index);
-			if (column[c]->index != NULL)
+			//fprintf(stderr, "  col = %s %d\n", column[c]->name, column[c]->nb_index);
+			if (column[c]->nb_index != 0)
 				pindex = column[c]->index[0];
 			else
 				pindex = NULL;
 			pindex0 = NULL;
 			while (pindex != NULL) {
 				if (pindex->gtf_data == gtf_data) {
-					fprintf(stderr, "    freeing index %s ...", pindex->key);
+					//fprintf(stderr, "    freeing index %s ...", pindex->key);
 					twalk(pindex->data, destroy_row_list_tree);
-					fprintf(stderr, " OK\n");
+					//fprintf(stderr, " OK\n");
 					free(pindex->key);
 					column[c]->nb_index--;
 					if (pindex0 == NULL) {
@@ -109,9 +109,9 @@ int free_gtf_data(GTF_DATA *gtf_data) {
 					pindex = pindex->next;
 				}
 			}
-			fprintf(stderr, "Updating index table ...");
+			//fprintf(stderr, "Updating index table ...");
 			update_index_table(column[c]);
-			fprintf(stderr, " OK\n");
+			//fprintf(stderr, " OK\n");
 		}
 		free(gtf_data);
 		gtf_data = NULL;

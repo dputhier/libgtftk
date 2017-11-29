@@ -170,7 +170,6 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 			if (j > 0) previous_row->next = row;
 			previous_row = row;
 		}
-		update_row_table(ret);
 	}
 	else {
 		all_rows = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));

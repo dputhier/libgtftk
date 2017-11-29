@@ -41,7 +41,7 @@ GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, i
 
 	/* Check whether we want to add a prefix/suffix to a basic attribute */
 
-	for (i = 0; i < nb_column; i++) {
+	for (i = 0; i < nb_column - 1; i++) {
 	//for(i = 0; i < 8; ++i){
 	    if(!strcmp(/*basic_attr[i]*/ column[i]->name, key))
 	    {

@@ -14,7 +14,6 @@
  */
 extern GTF_DATA *clone_gtf_data(GTF_DATA *gtf_data);
 extern int update_attribute_table(GTF_ROW * row);
-extern  int split_ip(char ***tab, char *s, char *delim);
 extern void add_attribute(GTF_ROW *row, char *key, char *value);
 
 char *concatenate_str(char *a, char *b, char *c){
@@ -27,16 +26,10 @@ char *concatenate_str(char *a, char *b, char *c){
   return str;
 }
 
-/*
- * global variables declaration
- */
-extern COLUMN **column;
-
 __attribute__ ((visibility ("default")))
 GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_key, char *sep) {
 
 	int i, j, nb, ok;
-	int nb_keys;
 	char **key_list;
 	char *value_1;
 	char *value_2;
@@ -44,7 +37,6 @@ GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_
 
 
 	key_list = (char **)malloc(2 * sizeof(char *));
-	nb_keys = split_ip(&key_list, strdup(keys), ",");
 
 	/*
 	 * reserve memory for the GTF_DATA structure to return
