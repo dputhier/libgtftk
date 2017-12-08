@@ -12,6 +12,7 @@
 
 #include "libgtftk.h"
 #include <search.h>
+#include <time.h>
 
 /*
  * external functions in gtf_reader.c
@@ -184,6 +185,7 @@ GTF_DATA *load_GTF(char *input) {
 	 * creates a GTF_READER to read from input
 	 */
 	GTF_READER *gr = get_gtf_reader(input);
+
 	if (gr == NULL) return NULL;
 
 	/*
@@ -449,6 +451,8 @@ INDEX_ID *get_index(GTF_DATA *gtf_data, char *key) {
 INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 	int j, k;
 
+	srand(time(NULL));
+
 	/*
 	 * ask for the requested index
 	 */
@@ -483,12 +487,21 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 			 * indexes all the rows of the GTF data with an attribute and put a
 			 * reference on the GTF data in the INDEX
 			 */
-			for (k = 0; k < gtf_data->size; k++)
-				for (j = 0; j < gtf_data->data[k]->attributes.nb; j++)
-					if (!strcmp(key, gtf_data->data[k]->attributes.attr[j]->key)) {
-						index_row(k, gtf_data->data[k]->attributes.attr[j]->value, column[index_id->column]->index[index_id->index_rank]);
+			int *kk = (int *)calloc(gtf_data->size, sizeof(int)), kq, kr;
+			for (k = 0; k < gtf_data->size; k++) kk[k] = k;
+			for (k = 0; k < gtf_data->size; k++) {
+				kr = k + rand() / (RAND_MAX / (gtf_data->size - k) + 1);
+				kq = kk[k];
+				kk[k] = kk[kr];
+				kk[kr] = kq;
+			}
+			for (k = 0; k < gtf_data->size; k++) {
+				for (j = 0; j < gtf_data->data[kk[k]]->attributes.nb; j++)
+					if (!strcmp(key, gtf_data->data[kk[k]]->attributes.attr[j]->key)) {
+						index_row(kk[k], gtf_data->data[kk[k]]->attributes.attr[j]->value, column[index_id->column]->index[index_id->index_rank]);
 						break;
 					}
+			}
 			column[index_id->column]->index[index_id->index_rank]->gtf_data = gtf_data;
 		}
 	}

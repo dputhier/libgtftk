@@ -102,7 +102,7 @@ void index_row(int row_nb, char *value, INDEX *index) {
 			row_list->token = value;
 			row_list->nb_row = 1;
 			row_list->row = (int *)calloc(1, sizeof(int));
-			row_list->row[row_list->nb_row - 1] = row_nb;
+			row_list->row[0] = row_nb;
 			tsearch(row_list, &(index->data), compare_row_list);
 		}
 		else {

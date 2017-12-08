@@ -87,14 +87,18 @@ GTF_READER *get_gtf_reader(char *query) {
 			gr->gz = 0;
 		}
 		else {
-			// not a usable file
-			perror(query_filename);
+			// suppose it is a GTF file ...
+			gr->filename = strdup(query_filename);
+			gr->plainfile = fopen(gr->filename, "ro");
+			gr->gzfile = NULL;
+			gr->gz = 0;
 		}
 	}
 	else {
 		free(gr);
 		gr = NULL;
 	}
+
 	free(tmp);
 	return gr;
 }
