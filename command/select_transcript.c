@@ -81,6 +81,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 	int min_j = 0, min_i = 0, min_trsize;
 	int max_j = 0, max_i = 0, max_trsize;
 	int most_5p, most_5p_i = 0, most_5p_j = 0;
+	int min_rk, max_rk;
 
 	// the size of the current transcript
 	int trsize;
@@ -92,7 +93,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 	int r = -1;
 
 	// loop variables
-	int i, j, k;
+	int i, j, k, rk;
 
 	// the row list of the current gene
 	ROW_LIST *datap = *((ROW_LIST **)nodep);
@@ -111,8 +112,11 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 		case postorder:
 			trsize = 0;
 			min_trsize = 10000000;
+			min_rk = 10000;
+			max_rk = 0;
 			max_trsize = 0;
 			most_5p = 0;
+			//qsort(datap->row, datap->nb_row, sizeof(int), comprow);
 
 			/*
 			 * loop on the rows of a gene
@@ -131,6 +135,8 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 					 */
 					r = datap->row[i];
 
+
+
 					if (*(row->field[6]) == '+') most_5p = 300000000;
 
 				}
@@ -139,6 +145,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 					 * if we parse a "transcript" row, we have to compute his
 					 * length
 					 */
+					rk = datap->row[i];
 
 					/*
 					 * loop on the attributes of the current transcript, just to
@@ -173,19 +180,20 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 								 * 	the rank of the first row
 								 * 	the rank of the transcript_id attribute
 								 */
-								if (trsize < min_trsize) {
+								if ((trsize < min_trsize) || ((trsize == min_trsize) && (rk < min_rk))) {
 									min_trsize = trsize;
 									min_i = i;
 									min_j = j;
+									min_rk = rk;
 								}
-
 								/*
 								 * the same for the longest transcript
 								 */
-								if (trsize > max_trsize) {
+								if ((trsize > max_trsize) || ((trsize == max_trsize) && (rk < max_rk))) {
 									max_trsize = trsize;
 									max_i = i;
 									max_j = j;
+									max_rk = rk;
 								}
 							}
 
@@ -198,6 +206,7 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 							 */
 							start = atoi(row->field[3]);
 							end = atoi(row->field[4]);
+
 							if (*(row->field[6]) == '+') {
 								if (most_5p > start) {
 									most_5p = start;

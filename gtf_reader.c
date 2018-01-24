@@ -67,14 +67,14 @@ GTF_READER *get_gtf_reader(char *query) {
 		// here we got a valid local file in query_filename
 		if (strstr(query_filename, ".gtf.gz")) {
 			// gz file
-			gr->filename = strdup(query_filename);
+			gr->filename = query_filename;
 			gr->gz = 1;
 			gr->gzfile = gzopen(gr->filename, "r");
 			gr->plainfile = NULL;
 		}
 		else if (strstr(query_filename, ".gtf")) {
 			// plain text file
-			gr->filename = strdup(query_filename);
+			gr->filename = query_filename;
 			gr->plainfile = fopen(gr->filename, "ro");
 			gr->gzfile = NULL;
 			gr->gz = 0;
@@ -83,12 +83,12 @@ GTF_READER *get_gtf_reader(char *query) {
 			// query is standard input
 			gr->plainfile = stdin;
 			gr->gzfile = NULL;
-			gr->filename = strdup("-");
+			gr->filename = query_filename;
 			gr->gz = 0;
 		}
 		else {
 			// suppose it is a GTF file ...
-			gr->filename = strdup(query_filename);
+			gr->filename = query_filename;
 			gr->plainfile = fopen(gr->filename, "ro");
 			gr->gzfile = NULL;
 			gr->gz = 0;

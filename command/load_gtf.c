@@ -26,6 +26,7 @@ extern char *get_next_gtf_line(GTF_READER *gr, char *buffer);
 extern void make_columns(void);
 extern void make_index(INDEX_ID *index_id, char *key);
 extern void index_row(int row_nb, char *value, INDEX *index);
+extern int comprow(const void *m1, const void *m2);
 
 /*
  * external functions in libgtftk.c
@@ -297,7 +298,10 @@ GTF_DATA *load_GTF(char *input) {
 	 * free the buffer used to read GTF file
 	 */
 	free(buffer);
-
+	if (gr != NULL) {
+		free(gr->filename);
+		free(gr);
+	}
 	return ret;
 }
 
@@ -370,6 +374,32 @@ STRING_LIST *get_all_attributes(GTF_DATA *gtf_data) {
  */
 void action_destroy(void *nodep) {
 
+}
+
+/*
+ * this function is used to sort le ROW_LIST elements of a new index because
+ * the rows of the data files are randomized when loaded to avoid a linear
+ * research tree
+ */
+static void action_sort(const void *nodep, const VISIT which, const int depth) {
+	// the row list of the current gene
+	ROW_LIST *datap = *((ROW_LIST **)nodep);
+
+	switch (which) {
+			case preorder:
+				break;
+
+			/*
+			 * The operations are made on internal nodes and leaves of the tree.
+			 */
+			case leaf :
+			case postorder:
+				qsort(datap->row, datap->nb_row, sizeof(int), comprow);
+				break;
+
+			case endorder:
+				break;
+		}
 }
 
 /*
@@ -503,6 +533,7 @@ INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key) {
 					}
 			}
 			column[index_id->column]->index[index_id->index_rank]->gtf_data = gtf_data;
+			twalk(column[index_id->column]->index[index_id->index_rank]->data, action_sort);
 		}
 	}
 	return index_id;
