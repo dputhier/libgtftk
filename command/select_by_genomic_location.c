@@ -89,7 +89,7 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 			}
 		}
 	}
-	fprintf(stderr, "nb_loc = %d; nb_row = %d\n", nb_loc, row_list->nb_row);
+	//fprintf(stderr, "nb_loc = %d; nb_row = %d\n", nb_loc, row_list->nb_row);
 
 	/*
 	 * now we fill the resulting GTF_DATA with the found rows and return it

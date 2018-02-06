@@ -111,16 +111,18 @@ char *trim_ip(char *s) {
 void split_key_value(char *s, char **key, char **value) {
 	int k = 0;
 
-	while (*s == ' ') s++;
-	while (*(s + k) != ' ') k++;
-	*(s + k) = 0;
-	*key = strdup(s);
-	s += k + 1;
-	while ((*s == ' ') || (*s == '"')) s++;
-	k = 0;
-	while ((*(s + k) != '"') && (*(s + k) != ' ') && (*(s + k) != 0)) k++;
-	*(s + k) = 0;
-	*value = strdup(s);
+	if (*s != 0) {
+		while (*s == ' ') s++;
+		while (*(s + k) != ' ') k++;
+		*(s + k) = 0;
+		*key = strdup(s);
+		s += k + 1;
+		while ((*s == ' ') || (*s == '"')) s++;
+		k = 0;
+		while ((*(s + k) != '"') && (*(s + k) != ' ') && (*(s + k) != 0)) k++;
+		*(s + k) = 0;
+		*value = strdup(s);
+	}
 }
 
 /*

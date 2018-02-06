@@ -166,6 +166,7 @@ GTF_DATA *load_GTF(char *input) {
 	 * a buffer to store rows of GTF file as they are read
 	 */
 	char *buffer = (char *)calloc(10000, sizeof(char));
+	char *trim_buffer;
 
 	/*
 	 * string tables to split GTF rows and attributes into fields
@@ -212,6 +213,7 @@ GTF_DATA *load_GTF(char *input) {
 	while (get_next_gtf_line(gr, buffer) != NULL) {
 		if (*buffer != '#') {
 			*(buffer + strlen(buffer) - 1) = 0;
+			trim_buffer = trim_ip(buffer);
 
 			/*
 			 * allocates memory for a new row in the row list
@@ -222,7 +224,7 @@ GTF_DATA *load_GTF(char *input) {
 			/*
 			 * split the row and check the number of fields (should be 9)
 			 */
-			i = split_ip(&token, buffer, "\t");
+			i = split_ip(&token, trim_buffer, "\t");
 			if (i != nb_column) {
 				if (!strcmp(gr->filename, "-"))
 					fprintf(stderr, "ERROR : standard input is not a valid GTF stream\n");
