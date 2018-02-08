@@ -33,7 +33,7 @@ extern int comprow(const void *m1, const void *m2);
  */
 extern int split_ip(char ***tab, char *s, char *delim);
 extern void split_key_value(char *s, char **key, char **value);
-
+extern char *trim_ip(char *);
 /*
  * global variables in libgtftk.c
  */

@@ -82,7 +82,10 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 									add_attribute(tr_row, row->attributes.attr[k]->key, row->attributes.attr[k]->value);
 							tr_row->field[0] = strdup(row->field[0]);
 							tr_row->field[1] = get_attribute_value(row, "transcript_source");
-							if (tr_row->field[1] == NULL) tr_row->field[1] = strdup(row->field[1]);
+							if (tr_row->field[1] == NULL)
+								tr_row->field[1] = strdup(row->field[1]);
+							else
+								tr_row->field[1] = strdup(tr_row->field[1]);
 							tr_row->field[2] = strdup("transcript");
 							tr_row->field[5] = strdup(row->field[5]);
 							tr_row->field[6] = strdup(row->field[6]);
@@ -95,7 +98,7 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 				asprintf(&(tr_row->field[4]), "%d", end);
 				if (ok) {
 					if (!strcmp(gtf_d->data[datap->row[0]]->field[2], "gene")) {
-						tr_row->next = gtf_d->data[datap->row[1]];
+						tr_row->next = gtf_d->data[datap->row[0]]->next;
 						gtf_d->data[datap->row[0]]->next = tr_row;
 					}
 					else {
@@ -166,11 +169,14 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 							for (k = 0; k < row->attributes.nb; k++)
 								if (!strncmp(row->attributes.attr[k]->key, "gene", 4) ||
 										strstr(row->attributes.attr[k]->key, "_gene_") ||
-										!strncmp(row->attributes.attr[k]->key + strlen(row->attributes.attr[k]->key) - 5, "_gene", 5))
+										!strncmp(strlen(row->attributes.attr[k]->key) >= 5 ? row->attributes.attr[k]->key + strlen(row->attributes.attr[k]->key) - 5 : row->attributes.attr[k]->key, "_gene", 5))
 									add_attribute(g_row, row->attributes.attr[k]->key, row->attributes.attr[k]->value);
 							g_row->field[0] = strdup(row->field[0]);
 							g_row->field[1] = get_attribute_value(row, "gene_source");
-							if (g_row->field[1] == NULL) g_row->field[1] = strdup(row->field[1]);
+							if (g_row->field[1] == NULL)
+								g_row->field[1] = strdup(row->field[1]);
+							else
+								g_row->field[1] = strdup(g_row->field[1]);
 							g_row->field[2] = strdup("gene");
 							g_row->field[5] = strdup(row->field[5]);
 							g_row->field[6] = strdup(row->field[6]);
@@ -223,6 +229,7 @@ GTF_DATA *convert_to_ensembl(GTF_DATA *gtf_data) {
 	gtf_d0 = NULL;
 	twalk(column[tid_index->column]->index[tid_index->index_rank]->data, action_transcript);
 	if (gtf_d0 != NULL) gtf_d->data[0] = gtf_d0;
+
 	ret->size += nbrow;
 	update_row_table(ret);
 
