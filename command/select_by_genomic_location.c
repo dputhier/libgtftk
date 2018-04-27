@@ -23,6 +23,8 @@ extern int compare_row_list(const void *p1, const void *p2);
 extern int add_row(int row, ROW_LIST *dst);
 extern int update_row_table(GTF_DATA *gtf_data);
 extern void add_attribute(GTF_ROW *row, char *key, char *value);
+extern void *bookmem(int nb, int size, char *file, const char *func, int line);
+extern char *dupstring(const char *s, char *file, const char *func, int line);
 
 /*
  * select_by_genomic_location function selects rows in GTF_DATA that match with
@@ -45,7 +47,8 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	/*
 	 * reserve memory for the GTF_DATA structure to return
 	 */
-	GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
+	//GTF_DATA *ret = (GTF_DATA *)calloc(1, sizeof(GTF_DATA));
+	GTF_DATA *ret = (GTF_DATA *)bookmem(1, sizeof(GTF_DATA), __FILE__, __func__, __LINE__);
 
 	/*
 	 * indexes the GTF_DATA with seqid column to create an index containing,
@@ -54,10 +57,12 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	seqid_index_id = index_gtf(gtf_data, "seqid");
 
 	// reserve memory for the final ROW_LIST
-	row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+	//row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+	row_list = (ROW_LIST *)bookmem(1, sizeof(ROW_LIST), __FILE__, __func__, __LINE__);
 
 	// reserve memory for the ROW_LIST used to search for chromosomes in index
-	test_row_list = calloc(1, sizeof(ROW_LIST));
+	//test_row_list = calloc(1, sizeof(ROW_LIST));
+	test_row_list = bookmem(1, sizeof(ROW_LIST), __FILE__, __func__, __LINE__);
 
 	/*
 	 * Loop on the number of locations
@@ -95,16 +100,20 @@ GTF_DATA *select_by_genomic_location(GTF_DATA *gtf_data, int nb_loc, char **chr,
 	 * now we fill the resulting GTF_DATA with the found rows and return it
 	 */
 	GTF_ROW *row, *previous_row = NULL;
-	ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
+	//ret->data = (GTF_ROW **)calloc(1, sizeof(GTF_ROW *));
+	ret->data = (GTF_ROW **)bookmem(1, sizeof(GTF_ROW *), __FILE__, __func__, __LINE__);
 	for (i = 0; i < row_list->nb_row; i++) {
-		row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
-		row->field = (char **)calloc(8, sizeof(char *));
+		//row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+		row = (GTF_ROW *)bookmem(1, sizeof(GTF_ROW), __FILE__, __func__, __LINE__);
+		//row->field = (char **)calloc(8, sizeof(char *));
+		row->field = (char **)bookmem(8, sizeof(char *), __FILE__, __func__, __LINE__);
 		if (i == 0) ret->data[0] = row;
 		for (k = 0; k < gtf_data->data[row_list->row[i]]->attributes.nb; k++)
 			add_attribute(row, gtf_data->data[row_list->row[i]]->attributes.attr[k]->key,
 					gtf_data->data[row_list->row[i]]->attributes.attr[k]->value);
 		for (k = 0; k < 8; k++)
-			row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
+			//row->field[k] = strdup(gtf_data->data[row_list->row[i]]->field[k]);
+			row->field[k] = dupstring(gtf_data->data[row_list->row[i]]->field[k], __FILE__, __func__, __LINE__);
 		row->rank = gtf_data->data[row_list->row[i]]->rank;
 		if (i > 0) previous_row->next = row;
 		previous_row = row;

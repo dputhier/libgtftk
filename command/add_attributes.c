@@ -14,6 +14,8 @@ extern INDEX_ID *index_gtf(GTF_DATA *gtf_data, char *key);
 extern int compare_row_list(const void *p1, const void *p2);
 extern GTF_DATA *clone_gtf_data(GTF_DATA *gtf_data);
 extern void add_attribute(GTF_ROW *row, char *key, char *value);
+extern void *bookmem(int nb, int size, char *file, const char *func, int line);
+extern void freemem(void *ptr, char *file, const char *func, int line);
 
 /*
  * global variables declaration
@@ -37,9 +39,11 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 
 	FILE *input = fopen(inputfile_name, "ro");
 	size_t buffersize = 1000;
-	char *buffer = (char *)calloc(buffersize, sizeof(char));
+	//char *buffer = (char *)calloc(buffersize, sizeof(char));
+	char *buffer = (char *)bookmem(buffersize, sizeof(char), __FILE__, __func__, __LINE__);
 	char *value, *new_value;
-	ROW_LIST **find_row_list, *test_row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+	//ROW_LIST **find_row_list, *test_row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+	ROW_LIST **find_row_list, *test_row_list = (ROW_LIST *)bookmem(1, sizeof(ROW_LIST), __FILE__, __func__, __LINE__);
 
 	while (getline(&buffer, &buffersize, input) > 0) {
 		value = buffer;
@@ -57,11 +61,11 @@ GTF_DATA *add_attributes(GTF_DATA *gtf_data, char *features, char *key, char *ne
 		}
 	}
 	if (test_row_list != NULL) {
-		if (test_row_list->row != NULL) free(test_row_list->row);
-		free(test_row_list);
+		if (test_row_list->row != NULL) freemem(test_row_list->row, __FILE__, __func__, __LINE__);
+		freemem(test_row_list, __FILE__, __func__, __LINE__);
 	}
 
-	free(buffer);
+	freemem(buffer, __FILE__, __func__, __LINE__);
 	fclose(input);
 	return ret;
 }

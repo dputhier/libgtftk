@@ -19,6 +19,10 @@
  * external functions declaration
  */
 extern int compare_row_list(const void *p1, const void *p2);
+extern void *bookmem(int nb, int size, char *file, const char *func, int line);
+extern void *rebookmem(void *ptr, int size, char *file, const char *func, int line);
+extern void freemem(void *ptr, char *file, const char *func, int line);
+extern char *dupstring(const char *s, char *file, const char *func, int line);
 
 /*
  * global variables declaration
@@ -62,12 +66,15 @@ void print_attributes(void *token, FILE *output, void *col, char delim) {
 
 void make_index(INDEX_ID *index_id, char *key) {
 	column[index_id->column]->nb_index++;
-	column[index_id->column]->index = (INDEX **)realloc(column[index_id->column]->index, column[index_id->column]->nb_index * sizeof(INDEX *));
-	INDEX *index = (INDEX *)calloc(1, sizeof(INDEX));
+	//column[index_id->column]->index = (INDEX **)realloc(column[index_id->column]->index, column[index_id->column]->nb_index * sizeof(INDEX *));
+	column[index_id->column]->index = (INDEX **)rebookmem(column[index_id->column]->index, column[index_id->column]->nb_index * sizeof(INDEX *), __FILE__, __func__, __LINE__);
+	//INDEX *index = (INDEX *)calloc(1, sizeof(INDEX));
+	INDEX *index = (INDEX *)bookmem(1, sizeof(INDEX), __FILE__, __func__, __LINE__);
 	column[index_id->column]->index[column[index_id->column]->nb_index - 1] = index;
 	index->data = NULL;
 	index->gtf_data = NULL;
-	index->key = strdup(key);
+	//index->key = strdup(key);
+	index->key = dupstring(key, __FILE__, __func__, __LINE__);
 	index_id->index_rank = column[index_id->column]->nb_index - 1;
 	if (column[index_id->column]->nb_index > 1)
 		column[index_id->column]->index[column[index_id->column]->nb_index - 2]->next = index;
@@ -86,7 +93,8 @@ void index_row(int row_nb, char *value, INDEX *index) {
 
 	if (index != NULL) {
 		// build a ROW_LIST to check if value is already indexed
-		test_row_list = calloc(1, sizeof(ROW_LIST));
+		//test_row_list = calloc(1, sizeof(ROW_LIST));
+		test_row_list = bookmem(1, sizeof(ROW_LIST), __FILE__, __func__, __LINE__);
 
 		test_row_list->token = value;
 		//fprintf(stderr, "ho\n");
@@ -98,10 +106,12 @@ void index_row(int row_nb, char *value, INDEX *index) {
 			 */
 
 			//fprintf(stderr, "creating index element %s\n", value);
-			row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+			//row_list = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
+			row_list = (ROW_LIST *)bookmem(1, sizeof(ROW_LIST), __FILE__, __func__, __LINE__);
 			row_list->token = value;
 			row_list->nb_row = 1;
-			row_list->row = (int *)calloc(1, sizeof(int));
+			//row_list->row = (int *)calloc(1, sizeof(int));
+			row_list->row = (int *)bookmem(1, sizeof(int), __FILE__, __func__, __LINE__);
 			row_list->row[0] = row_nb;
 			tsearch(row_list, &(index->data), compare_row_list);
 		}
@@ -113,10 +123,11 @@ void index_row(int row_nb, char *value, INDEX *index) {
 			//fprintf(stderr, "adding row %d in element %s\n", row_nb, value);
 			row_list = *((ROW_LIST **)find_row_list);
 			row_list->nb_row++;
-			row_list->row = (int *)realloc(row_list->row, row_list->nb_row * sizeof(int));
+			//row_list->row = (int *)realloc(row_list->row, row_list->nb_row * sizeof(int));
+			row_list->row = (int *)rebookmem(row_list->row, row_list->nb_row * sizeof(int), __FILE__, __func__, __LINE__);
 			row_list->row[row_list->nb_row - 1] = row_nb;
 		}
-		free(test_row_list);
+		freemem(test_row_list, __FILE__, __func__, __LINE__);
 	}
 }
 
@@ -148,13 +159,16 @@ void print_row(FILE *output, GTF_ROW *r, char delim, int add_chr) {
  *
  * Returns:		the initialized COLUMN structure
  */
-COLUMN *make_column(char type, int i, void *dv, char *name) {
-	COLUMN *column = (COLUMN *)calloc(1, sizeof(COLUMN));
+COLUMN *make_column(int i, void *dv, char *name) {
+	//COLUMN *column = (COLUMN *)calloc(1, sizeof(COLUMN));
+	COLUMN *column = (COLUMN *)bookmem(1, sizeof(COLUMN), __FILE__, __func__, __LINE__);
 	column->num = i;
-	column->name = strdup(name);
+	//column->name = strdup(name);
+	column->name = dupstring(name, __FILE__, __func__, __LINE__);
 	column->index = NULL;
 	column->nb_index = 0;
-	if (dv != NULL) column->default_value = strdup((char *)dv);
+	//if (dv != NULL) column->default_value = strdup((char *)dv);
+	if (dv != NULL) column->default_value = dupstring((char *)dv, __FILE__, __func__, __LINE__);
 
 	return column;
 }
@@ -169,14 +183,17 @@ COLUMN *make_column(char type, int i, void *dv, char *name) {
  */
 void make_columns(void) {
 	nb_column = 9;
-	column = (COLUMN **)calloc(nb_column, sizeof(COLUMN *));
-	column[0] = make_column('S', 0, ".", "seqid");
-	column[1] = make_column('S', 1, ".", "source");
-	column[2] = make_column('S', 2, ".", "feature");
-	column[3] = make_column('S', 3, ".", "start");
-	column[4] = make_column('S', 4, ".", "end");
-	column[5] = make_column('S', 5, ".", "score");
-	column[6] = make_column('S', 6, ".", "strand");
-	column[7] = make_column('S', 7, ".", "phase");
-	column[8] = make_column('A', 8, ".", "attributes");
+	if (column == NULL) {
+		//column = (COLUMN **)calloc(nb_column, sizeof(COLUMN *));
+		column = (COLUMN **)bookmem(nb_column, sizeof(COLUMN *), __FILE__, __func__, __LINE__);
+		column[0] = make_column(0, ".", "seqid");
+		column[1] = make_column(1, ".", "source");
+		column[2] = make_column(2, ".", "feature");
+		column[3] = make_column(3, ".", "start");
+		column[4] = make_column(4, ".", "end");
+		column[5] = make_column(5, ".", "score");
+		column[6] = make_column(6, ".", "strand");
+		column[7] = make_column(7, ".", "phase");
+		column[8] = make_column(8, ".", "attributes");
+	}
 }

@@ -17,6 +17,12 @@
 #include <zlib.h>
 #include <search.h>
 #include <string.h>
+#include <errno.h>
+
+/*
+ * Flag to write memory operations (malloc, calloc, realloc, free) in stderr
+ */
+#define LOG_MEMORY_HANDLING 0
 
 /*
  * constants for transcript selection in select_transcript function
@@ -181,16 +187,7 @@ typedef struct INDEX_ID {
 } INDEX_ID;
 
 /*
- * This is a class-like structure that modelize a column of a GTF file. It
- * contains obvious information like the name of the column, its type and the
- * indexes made on it. It contains also pointers on functions that are intended
- * to work with the corresponding values in the GTF data. There is a particular
- * function for each type of data. For example, the convert function takes a
- * string value and a default value as parameters and returns and integer
- * pointer for columns that contains integers (start, end ...), a float pointer
- * for "score" column and an ATTRIBUTES pointer for the last column. Pointers
- * on functions are initialized in the make_column function in the column.c
- * source file, depending on the type of each column.
+ * This is a structure that modelize a column of a GTF file.
  */
 typedef struct COLUMN {
 	/*
@@ -357,5 +354,7 @@ GTF_DATA *add_exon_number(GTF_DATA *gtf_data, char *exon_number_field);
 GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, int suffix);
 GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_key, char *sep);
 void clear_indexes(void);
+GTF_DATA *add_attr_column(GTF_DATA *gtf_data, char *inputfile_name, char *new_key);
+GTF_DATA *select_transcript2(GTF_DATA *gtf_data, int type);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */

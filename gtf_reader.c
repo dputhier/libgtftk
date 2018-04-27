@@ -11,6 +11,10 @@
 
 #include "libgtftk.h"
 
+extern void *bookmem(int nb, int size, char *file, const char *func, int line);
+extern void freemem(void *ptr, char *file, const char *func, int line);
+extern char *dupstring(const char *s, char *file, const char *func, int line);
+
 /*
  * Returns the next row of text from the file pointed by gr (a gzipped file or a flat file),
  * or NULL if the EOF has been reached
@@ -40,8 +44,10 @@ char *get_next_gtf_line(GTF_READER *gr, char *buffer) {
  *  - a file in ~/.gtftk/
  */
 GTF_READER *get_gtf_reader(char *query) {
-	GTF_READER *gr = (GTF_READER *)calloc(1, sizeof(GTF_READER));
-	char *tmp = (char *)calloc(1000, sizeof(char)), *query_filename;
+	//GTF_READER *gr = (GTF_READER *)calloc(1, sizeof(GTF_READER));
+	GTF_READER *gr = (GTF_READER *)bookmem(1, sizeof(GTF_READER), __FILE__, __func__, __LINE__);
+	//char *tmp = (char *)calloc(1000, sizeof(char)), *query_filename;
+	char *tmp = (char *)bookmem(1000, sizeof(char), __FILE__, __func__, __LINE__), *query_filename;
 
 	if (access(query, F_OK) && strcmp(query, "-")) {
 		// query is not a local file
@@ -57,11 +63,13 @@ GTF_READER *get_gtf_reader(char *query) {
 		}
 		else
 			// query is a file in ~/.gtftk
-			query_filename = strdup(tmp);
+			//query_filename = strdup(tmp);
+			query_filename = dupstring(tmp, __FILE__, __func__, __LINE__);
 	}
 	else
 		// query is a valid local file
-		query_filename = strdup(query);
+		//query_filename = strdup(query);
+		query_filename = dupstring(query, __FILE__, __func__, __LINE__);
 
 	if (query_filename != NULL) {
 		// here we got a valid local file in query_filename
@@ -95,10 +103,10 @@ GTF_READER *get_gtf_reader(char *query) {
 		}
 	}
 	else {
-		free(gr);
+		freemem(gr, __FILE__, __func__, __LINE__);
 		gr = NULL;
 	}
 
-	free(tmp);
+	freemem(tmp, __FILE__, __func__, __LINE__);
 	return gr;
 }

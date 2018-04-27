@@ -9,6 +9,7 @@
  */
 
 #include "libgtftk.h"
+#include <limits.h>
 
 /*
  * external functions declaration
@@ -18,6 +19,8 @@ extern char *get_attribute_value(GTF_ROW *row, char *attr);
 extern int update_row_table(GTF_DATA *gtf_data);
 extern void add_attribute(GTF_ROW *row, char *key, char *value);
 extern GTF_DATA *clone_gtf_data(GTF_DATA *gtf_data);
+extern void *bookmem(int nb, int size, char *file, const char *func, int line);
+extern char *dupstring(const char *s, char *file, const char *func, int line);
 
 /*
  * global variables declaration
@@ -58,9 +61,11 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 				}
 			}
 			if (!ok) {
-				tr_row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+				//tr_row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+				tr_row = (GTF_ROW *)bookmem(1, sizeof(GTF_ROW), __FILE__, __func__, __LINE__);
 				tr_row->rank = -1;
-				tr_row->field = (char **)calloc(8, sizeof(char *));
+				//tr_row->field = (char **)calloc(8, sizeof(char *));
+				tr_row->field = (char **)bookmem(8, sizeof(char *), __FILE__, __func__, __LINE__);
 				start = INT_MAX;
 				end = 0;
 				for (i = 0; i < datap->nb_row; i++) {
@@ -80,16 +85,23 @@ static void action_transcript(const void *nodep, const VISIT which, const int de
 							for (k = 0; k < row->attributes.nb; k++)
 								if (strncmp(row->attributes.attr[k]->key, "exon", 4))
 									add_attribute(tr_row, row->attributes.attr[k]->key, row->attributes.attr[k]->value);
-							tr_row->field[0] = strdup(row->field[0]);
+							//tr_row->field[0] = strdup(row->field[0]);
+							tr_row->field[0] = dupstring(row->field[0], __FILE__, __func__, __LINE__);
 							tr_row->field[1] = get_attribute_value(row, "transcript_source");
 							if (tr_row->field[1] == NULL)
-								tr_row->field[1] = strdup(row->field[1]);
+								//tr_row->field[1] = strdup(row->field[1]);
+								tr_row->field[1] = dupstring(row->field[1], __FILE__, __func__, __LINE__);
 							else
-								tr_row->field[1] = strdup(tr_row->field[1]);
-							tr_row->field[2] = strdup("transcript");
-							tr_row->field[5] = strdup(row->field[5]);
-							tr_row->field[6] = strdup(row->field[6]);
-							tr_row->field[7] = strdup(row->field[7]);
+								//tr_row->field[1] = strdup(tr_row->field[1]);
+								tr_row->field[1] = dupstring(tr_row->field[1], __FILE__, __func__, __LINE__);
+							//tr_row->field[2] = strdup("transcript");
+							tr_row->field[2] = dupstring("transcript", __FILE__, __func__, __LINE__);
+							//tr_row->field[5] = strdup(row->field[5]);
+							tr_row->field[5] = dupstring(row->field[5], __FILE__, __func__, __LINE__);
+							//tr_row->field[6] = strdup(row->field[6]);
+							tr_row->field[6] = dupstring(row->field[6], __FILE__, __func__, __LINE__);
+							//tr_row->field[7] = strdup(row->field[7]);
+							tr_row->field[7] = dupstring(row->field[7], __FILE__, __func__, __LINE__);
 							ok = 1;
 							nbrow++;
 						}
@@ -147,9 +159,11 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 				}
 			}
 			if (!ok) {
-				g_row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+				//g_row = (GTF_ROW *)calloc(1, sizeof(GTF_ROW));
+				g_row = (GTF_ROW *)bookmem(1, sizeof(GTF_ROW), __FILE__, __func__, __LINE__);
 				g_row->rank = -1;
-				g_row->field = (char **)calloc(8, sizeof(char *));
+				//g_row->field = (char **)calloc(8, sizeof(char *));
+				g_row->field = (char **)bookmem(8, sizeof(char *), __FILE__, __func__, __LINE__);
 				start = INT_MAX;
 				end = 0;
 				for (i = 0; i < datap->nb_row; i++) {
@@ -171,16 +185,23 @@ static void action_gene(const void *nodep, const VISIT which, const int depth) {
 										strstr(row->attributes.attr[k]->key, "_gene_") ||
 										!strncmp(strlen(row->attributes.attr[k]->key) >= 5 ? row->attributes.attr[k]->key + strlen(row->attributes.attr[k]->key) - 5 : row->attributes.attr[k]->key, "_gene", 5))
 									add_attribute(g_row, row->attributes.attr[k]->key, row->attributes.attr[k]->value);
-							g_row->field[0] = strdup(row->field[0]);
+							//g_row->field[0] = strdup(row->field[0]);
+							g_row->field[0] = dupstring(row->field[0], __FILE__, __func__, __LINE__);
 							g_row->field[1] = get_attribute_value(row, "gene_source");
 							if (g_row->field[1] == NULL)
-								g_row->field[1] = strdup(row->field[1]);
+								//g_row->field[1] = strdup(row->field[1]);
+								g_row->field[1] = dupstring(row->field[1], __FILE__, __func__, __LINE__);
 							else
-								g_row->field[1] = strdup(g_row->field[1]);
-							g_row->field[2] = strdup("gene");
-							g_row->field[5] = strdup(row->field[5]);
-							g_row->field[6] = strdup(row->field[6]);
-							g_row->field[7] = strdup(row->field[7]);
+								//g_row->field[1] = strdup(g_row->field[1]);
+								g_row->field[1] = dupstring(g_row->field[1], __FILE__, __func__, __LINE__);
+							//g_row->field[2] = strdup("gene");
+							g_row->field[2] = dupstring("gene", __FILE__, __func__, __LINE__);
+							//g_row->field[5] = strdup(row->field[5]);
+							g_row->field[5] = dupstring(row->field[5], __FILE__, __func__, __LINE__);
+							//g_row->field[6] = strdup(row->field[6]);
+							g_row->field[6] = dupstring(row->field[6], __FILE__, __func__, __LINE__);
+							//g_row->field[7] = strdup(row->field[7]);
+							g_row->field[7] = dupstring(row->field[7], __FILE__, __func__, __LINE__);
 							ok = 1;
 							nbrow++;
 						}
