@@ -188,11 +188,11 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 	else {
 		//all_rows = (ROW_LIST *)calloc(1, sizeof(ROW_LIST));
 		all_rows = (ROW_LIST *)bookmem(1, sizeof(ROW_LIST), __FILE__, __func__, __LINE__);
-		if (not == 2) {
+		if (not == 2) { /* We start with rows that have the key */
 			twalk(column[index_id->column]->index[index_id->index_rank]->data, get_all_rows);
 			qsort(all_rows->row, all_rows->nb_row, sizeof(int), comprow);
 		}
-		else {
+		else { /* We start with all rows, even those that don't have the key */
 			//all_rows->row = (int *)calloc(gtf_data->size, sizeof(int));
 			all_rows->row = (int *)bookmem(gtf_data->size, sizeof(int), __FILE__, __func__, __LINE__);
 			all_rows->nb_row = gtf_data->size;
@@ -266,6 +266,8 @@ GTF_DATA *select_by_key(GTF_DATA *gtf_data, char *key, char *value, int not) {
 					//row->attributes.attr[i] = (ATTRIBUTE *)calloc(1, sizeof(ATTRIBUTE));
 					row->attributes.attr[i] = (ATTRIBUTE *)bookmem(1, sizeof(ATTRIBUTE), __FILE__, __func__, __LINE__);
 					//row->attributes.attr[i]->key = strdup(gtf_data->data[k]->attributes.attr[i]->key);
+					row->attributes.attr[i]->key = dupstring(gtf_data->data[k]->attributes.attr[i]->key, __FILE__, __func__, __LINE__);
+					//row->attributes.attr[i]->value = strdup(gtf_data->data[k]->attributes.attr[i]->value);
 					row->attributes.attr[i]->value = dupstring(gtf_data->data[k]->attributes.attr[i]->value, __FILE__, __func__, __LINE__);
 				}
 				row->rank = gtf_data->data[k]->rank;

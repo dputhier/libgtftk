@@ -65,9 +65,6 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 	// the "gene" row rank
 	int rg = -1;
 
-	// the "fetaure" row rank
-	int rf = -1;
-
 	// the size of the current transcript
 	int trsize;
 
@@ -97,8 +94,6 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 				feature = row->field[2];
 				if (!strcmp(feature, "gene"))
 					rg = datap->row[i];
-				else if (!strcmp(feature, "transcript"))
-					rf = datap->row[i];
 			}
 			nb_tr = get_trid_list(datap, &tr_list);
 			//fprintf(stderr, "nb_tr = %d\n", nb_tr);
