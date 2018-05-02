@@ -110,6 +110,14 @@ static void action_st(const void *nodep, const VISIT which, const int depth) {
 					qsort((*find_row_list)->row, (*find_row_list)->nb_row, sizeof(int), comprow);
 
 					/*
+					 * we set most_5p to a great number if the gene is on the positive strand
+					 */
+					if ((*find_row_list)->nb_row > 0) {
+						row = gtf_d->data[(*find_row_list)->row[0]];
+						if (*(row->field[6]) == '+') most_5p = 300000000;
+					}
+
+					/*
 					 * we loop on all exon rows of the transcript
 					 * to compute his length
 					 */
