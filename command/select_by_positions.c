@@ -60,5 +60,3 @@ GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size) {
 
 	return ret;
 }
-
-
