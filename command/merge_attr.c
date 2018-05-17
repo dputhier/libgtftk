@@ -29,7 +29,7 @@ extern int nb_column;
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_key, char *sep) {
-	int i, j, k, c, p, nb_attr, new_size, ok;
+	int i, j, k, c, nb_attr, new_size, ok;
 	int nb_requested_key = 0;
 	char **key_list;
 	char *none = dupstring(".", __FILE__, __func__, __LINE__);
@@ -42,7 +42,7 @@ GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_
 
 	nb_requested_key = split_ip(&key_list, dupstring(keys, __FILE__, __func__, __LINE__), ",");
 
-	hit *hits = bookmem(nb_requested_key, sizeof(hit *), __FILE__, __func__, __LINE__);
+	hit *hits = bookmem(nb_requested_key, sizeof(hit), __FILE__, __func__, __LINE__);
 
 	/*
 	 * reserve memory for the GTF_DATA structure to return
@@ -58,9 +58,9 @@ GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_
 		new_size = 1;
 		new_buffer = (char *)bookmem(1, sizeof(char), __FILE__, __func__, __LINE__);
 		*new_buffer = 0;
-		for (p = 0; p < nb_requested_key; p++)	{
-			hits[p].key = key_list[p];
-			hits[p].value = none;
+		for (k = 0; k < nb_requested_key; k++)	{
+			hits[k].key = key_list[k];
+			hits[k].value = none;
 		}
 
 		row = ret->data[i];
@@ -72,42 +72,31 @@ GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_
 				for (j = 0; j < nb_attr; j++) {
 					pattr = row->attributes.attr[j];
 					if (strcmp(key_list[k], pattr->key) == 0) {
-						for (p = 0; p < nb_requested_key; p++) {
-							if (strcmp(pattr->key, hits[p].key) == 0) {
-								//hits[p].value = strdup(pattr->value);
-								hits[p].value = dupstring(pattr->value, __FILE__, __func__, __LINE__);
-							}
+						hits[k].value = dupstring(pattr->value, __FILE__, __func__, __LINE__);
+						break;
+					}
+				}
+				if (strcmp(hits[k].value, ".") == 0)	{
+					for (c = 0; c < nb_column; c++)	{
+						if(!strcmp(column[c]->name, hits[k].key)) {
+						    hits[k].value = dupstring(row->field[c], __FILE__, __func__, __LINE__);
+						    break;
 						}
 					}
 				}
-				for (p = 0; p < nb_requested_key; p++) {
-					if (strcmp(hits[p].value, ".") == 0)	{
-						for (c = 0; c < nb_column; c++)	{
-						    if (!strcmp(column[c]->name, hits[p].key)) {
-						    	//hits[p].value = strdup(row->field[c]);
-						    	hits[p].value = dupstring(row->field[c], __FILE__, __func__, __LINE__);
-						    	break;
-						    }
-						}
-
-					}
-					if (p < (nb_requested_key -1)) {
-						new_size += strlen(hits[p].value) + strlen(sep);
-						//new_buffer = (char *)malloc(new_size);
-						new_buffer = (char *)rebookmem(new_buffer, new_size, __FILE__, __func__, __LINE__);
-						strcat(new_buffer, hits[p].value);
-						strcat(new_buffer, sep);
-					}
-					else {
-						new_size += strlen(hits[p].value);
-						//new_buffer = (char *)malloc(new_size);
-						new_buffer = (char *)rebookmem(new_buffer, new_size, __FILE__, __func__, __LINE__);
-						strcat(new_buffer, hits[p].value);
-					}
+				if (k == 0) {
+					new_size += strlen(hits[k].value);
+					new_buffer = (char *)rebookmem(new_buffer, new_size, __FILE__, __func__, __LINE__);
+					strcat(new_buffer, hits[k].value);
 				}
-				pattr = pattr->next;
+				else {
+					new_size += strlen(hits[k].value) + strlen(sep);
+					new_buffer = (char *)rebookmem(new_buffer, new_size, __FILE__, __func__, __LINE__);
+					strcat(new_buffer, sep);
+					strcat(new_buffer, hits[k].value);
+				}
 			}
-			add_attribute(row, dest_key, new_buffer/*str_concat*/);
+			add_attribute(row, dest_key, new_buffer);
 			freemem(new_buffer, __FILE__, __func__, __LINE__);
 		}
 		update_attribute_table(row);

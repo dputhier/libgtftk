@@ -14,7 +14,6 @@ extern char *dupstring(const char *s, char *file, const char *func, int line);
 
 __attribute__ ((visibility ("default")))
 GTF_DATA *select_by_positions(GTF_DATA *gtf_data, int *pos, int size) {
-	fprintf(stderr, "size = %d\n", size);
 	int i, j	;
 	GTF_ROW *row, *previous_row = NULL;
 
