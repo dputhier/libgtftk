@@ -193,14 +193,18 @@ FILE *get_fasta_file(char *fasta_file, char *buffer) {
 FILE *get_fasta_file_index(FILE *fasta_file, char *index) {
 	FILE *ffi = NULL;
 	long pfasta;
-	//char *buffer = (char *)calloc(1000, sizeof(char));
-	char *buffer = (char *)bookmem(1000, sizeof(char), __FILE__, __func__, __LINE__);
+	char *buffer = NULL;
 	int maxLineSize = 0;
+	size_t size = 0;
+	unsigned int n;
+	unsigned long old_crc, crc;
 
 	if (access(index, F_OK)) {
 		ffi = fopen(index, "w+");
 		pfasta = ftell(fasta_file);
-		while (fgets(buffer, 999, fasta_file) != NULL) {
+		crc = crc32(0L, Z_NULL, 0);
+		while ((n = getline(&buffer, &size, fasta_file)) != -1) {
+			crc = crc32(crc, (Bytef *)buffer, n);
 			if (*buffer == '>') {
 				*(buffer + strlen(buffer) - 1) = 0;
 				fprintf(ffi, "%s\t%ld\t%ld\n", buffer + 1, pfasta, ftell(fasta_file));
@@ -208,14 +212,49 @@ FILE *get_fasta_file_index(FILE *fasta_file, char *index) {
 			else
 				maxLineSize = MAX(maxLineSize, strlen(buffer));
 			pfasta = ftell(fasta_file);
+			free(buffer);
+			buffer = NULL;
 		}
 		fprintf(ffi, "%d\n", maxLineSize - 1);
-		rewind(fasta_file);
+		fprintf(ffi, "%lx\n", crc);
 		fflush(ffi);
-		rewind(ffi);
 	}
-	else
+	else {
 		ffi = fopen(index, "r");
+		buffer = (char *)calloc(1000, sizeof(char));
+		while (fgets(buffer, 999, ffi) != NULL);
+		sscanf(buffer, "%lx", &old_crc);
+		free(buffer);
+		buffer = NULL;
+		crc = crc32(0L, Z_NULL, 0);
+		while ((n = getline(&buffer, &size, fasta_file)) != -1) {
+			crc = crc32(crc, (Bytef *)buffer, n);
+			free(buffer);
+			buffer = NULL;
+		}
+		if (old_crc != crc) {
+			fclose(ffi);
+			ffi = fopen(index, "w");
+			rewind(fasta_file);
+			pfasta = ftell(fasta_file);
+			while ((n = getline(&buffer, &size, fasta_file)) != -1) {
+				if (*buffer == '>') {
+					*(buffer + strlen(buffer) - 1) = 0;
+					fprintf(ffi, "%s\t%ld\t%ld\n", buffer + 1, pfasta, ftell(fasta_file));
+				}
+				else
+					maxLineSize = MAX(maxLineSize, strlen(buffer));
+				pfasta = ftell(fasta_file);
+				free(buffer);
+				buffer = NULL;
+			}
+			fprintf(ffi, "%d\n", maxLineSize - 1);
+			fprintf(ffi, "%lx\n", crc);
+			fflush(ffi);
+		}
+		rewind(ffi);
+		rewind(fasta_file);
+	}
 	return ffi;
 }
 
@@ -303,10 +342,13 @@ SEQUENCES *get_sequences(GTF_DATA *gtf_data, char *genome_file, int intron, int 
 				item.data = (long *)bookmem(1, sizeof(long), __FILE__, __func__, __LINE__);
 				*(long *)item.data = atol(token[n - 1]);
 				hsearch(item, ENTER);
+				freemem(token, __FILE__, __func__, __LINE__);
 			}
-			else
+			else {
 				maxLineSize = atoi(token[0]);
-			freemem(token, __FILE__, __func__, __LINE__);
+				freemem(token, __FILE__, __func__, __LINE__);
+				break;
+			}
 		}
 		fclose(ffi);
 
