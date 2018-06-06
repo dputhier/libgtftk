@@ -375,7 +375,6 @@ GTF_DATA *add_prefix(GTF_DATA *gtf_data, char *features, char *key, char *txt, i
 GTF_DATA *merge_attr(GTF_DATA *gtf_data, char *features, char *keys, char *dest_key, char *sep);
 void clear_indexes(void);
 GTF_DATA *add_attr_column(GTF_DATA *gtf_data, char *inputfile_name, char *new_key);
-GTF_DATA *select_transcript2(GTF_DATA *gtf_data, int type);
 int int_array_test(int *pos, int size);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */
