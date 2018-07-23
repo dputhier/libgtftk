@@ -92,6 +92,8 @@ GTF_DATA *load_blast(char *input) {
 	previous_row = row;
 	n++;
 	free(r);
+	free(gr);
+	free(hsp);
 	ret->size = n;
 	update_row_table(ret);
 	return ret;
