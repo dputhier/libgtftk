@@ -10,8 +10,11 @@
 extern int split_ip(char ***tab, char *s, char *delim);
 extern char *trim_ip(char *);
 
-GTF_READER *get_blast_reader(char *query) {
-	GTF_READER *gr = (GTF_READER *)calloc(1, sizeof(GTF_READER));
+/*
+ * Build and return a reader on a BLASTN output file.
+ */
+TEXTFILE_READER *get_blast_reader(char *query) {
+	TEXTFILE_READER *gr = (TEXTFILE_READER *)calloc(1, sizeof(TEXTFILE_READER));
 	char *tmp = (char *)calloc(1000, sizeof(char)), *query_filename = NULL;
 
 	if (!access(query, F_OK) || !strcmp(query, "-"))
@@ -54,7 +57,7 @@ GTF_READER *get_blast_reader(char *query) {
 }
 
 
-char *readline(GTF_READER *gr) {
+char *readline(TEXTFILE_READER *gr) {
 	char *buffer = (char *)calloc(10000, sizeof(char));
 	char *ret = NULL, *ret_tmp, *ret_trim;;
 
@@ -71,7 +74,7 @@ char *readline(GTF_READER *gr) {
 	return ret;
 }
 
-char *get_blast_header(GTF_READER *gr, BLAST_HEADER *bh) {
+char *get_blast_header(TEXTFILE_READER *gr, BLAST_HEADER *bh) {
 	char *buffer = NULL;
 	char **field, *p, *i;
 
@@ -110,7 +113,7 @@ char *get_blast_header(GTF_READER *gr, BLAST_HEADER *bh) {
 	return buffer;
 }
 
-char *get_next_blast_hsp(GTF_READER *gr, BLAST_HSP *hsp, char *buffer) {
+char *get_next_blast_hsp(TEXTFILE_READER *gr, BLAST_HSP *hsp, char *buffer) {
 	char *tmp = NULL;
 	char *i;
 	char **field;
@@ -135,17 +138,14 @@ char *get_next_blast_hsp(GTF_READER *gr, BLAST_HSP *hsp, char *buffer) {
 			tmp = readline(gr);
 			*strchr(tmp, ' ') = 0;
 			hsp->bq.query_length = atoi(tmp + 1);
-			free(tmp);
 		}
 		else if (*tmp == '>') {
 			if (hsp->bs.subject_name != NULL) free(hsp->bs.subject_name);
 			hsp->bs.subject_name = strdup(tmp + 1);
-			free(tmp);
 		}
 		else if (!strncmp("Length", tmp, 6)) {
 			i = strchr(tmp, '=');
 			if (i != NULL) hsp->bs.subject_length = atoi(trim_ip(i + 1));
-			free(tmp);
 		}
 		else if (!strncmp("Score =", tmp, 7)) {
 			i = strchr(tmp, '=');
@@ -155,7 +155,6 @@ char *get_next_blast_hsp(GTF_READER *gr, BLAST_HSP *hsp, char *buffer) {
 				hsp->expect = atof(field[5]);
 				free(field);
 			}
-			free(tmp);
 			deja = 1;
 		}
 		else if (!strncmp("Identities", tmp, 10)) {
@@ -179,7 +178,6 @@ char *get_next_blast_hsp(GTF_READER *gr, BLAST_HSP *hsp, char *buffer) {
 				hsp->subject_start = -1;
 				hsp->subject_end = -1;
 			}
-			free(tmp);
 		}
 		else if (!strncmp("Strand", tmp, 6)) {
 			i = strchr(tmp, '=');
@@ -189,7 +187,6 @@ char *get_next_blast_hsp(GTF_READER *gr, BLAST_HSP *hsp, char *buffer) {
 				hsp->strand_subject = strcmp(field[2], "Plus") ? '-' : '+';
 				free(field);
 			}
-			free(tmp);
 		}
 		else if (!strncmp("Query:", tmp, 6)) {
 			split_ip(&field, tmp, " ");
@@ -211,6 +208,7 @@ char *get_next_blast_hsp(GTF_READER *gr, BLAST_HSP *hsp, char *buffer) {
 			if ((hsp->subject_end == -1) || (hsp->subject_end < k))	hsp->subject_end = k;
 			free(field);
 		}
+		free(tmp);
 		tmp = readline(gr);
 	}
 	return tmp;
