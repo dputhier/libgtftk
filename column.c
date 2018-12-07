@@ -90,6 +90,7 @@ void print_row(FILE *output, GTF_ROW *r, char delim, int add_chr) {
  */
 void print_attr_with_sep(GTF_ROW *row, FILE *output, char delim, char *keys, char *sep, char *more_info) {
 	int n, i, j;
+	int found = 0;
 	char **token;
 	char *keys_concat = (char *)calloc(5000, sizeof(char));
 
@@ -98,53 +99,65 @@ void print_attr_with_sep(GTF_ROW *row, FILE *output, char delim, char *keys, cha
 
     for(i=0; i<n; i++)
     {
+        found = 0;
 
         if(strcmp("seqid", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[0]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("chrom", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[0]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("source", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[1]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("feature", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[2]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("start", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[3]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("end", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[4]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("score", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[5]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("strand", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[6]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
         else if(strcmp("phase", token[i]) == 0)
         {
                     strcat(keys_concat, row->field[7]);
                     if (i < (n-1)) strcat(keys_concat, sep);
+                    found = 1;
         }
-        else{
+
+        if(found == 0)
+        {
             if (row->attributes.nb != -1)
             {
                 for(j=0; j< row->attributes.nb; j++)
@@ -154,16 +167,25 @@ void print_attr_with_sep(GTF_ROW *row, FILE *output, char delim, char *keys, cha
                     {
                             strcat(keys_concat, row->attributes.attr[j]->value);
                             if (i < (n-1)) strcat(keys_concat, sep);
+                            found = 1;
 
                     }
                 }
+            }
+        }
+
+        if(found == 0){
+            if(found == 0){
+                strcat(keys_concat, "?");
+                if (i < (n-1)) strcat(keys_concat, sep);
             }
         }
     }
 
     //keys_concat = (char *)realloc(keys_concat, (strlen(keys_concat) + 1) * sizeof(char));
 
-    if(more_info){
+
+    if(strlen(more_info)){
         strcat(keys_concat, sep);
         strcat(keys_concat, more_info);
     }
@@ -199,13 +221,13 @@ void print_row_bed(FILE *output, GTF_ROW *r,  char delim, int add_chr, char *key
 	if (add_chr) fprintf(output, "chr");
 	// print chr, start, end
 	print_string(r->field[0], output, column[0], delim);
-	print_string(r->field[3], output, column[3], delim);
+	fprintf(output,"%d%c", atoi(r->field[3]) - 1, delim);
 	print_string(r->field[4], output, column[4], delim);
 	// print requested columns with user-defined delim
 	print_attr_with_sep(r, output, delim, keys, sep, more_info);
 	// print score strand
 	print_string(r->field[5], output, column[5], delim);
-	print_string(r->field[6], output, column[6], delim);
+	fprintf(output,"%s", r->field[6]);
 	fprintf(output, "\n");
 }
 
