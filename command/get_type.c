@@ -99,22 +99,24 @@ int get_type(GTF_DATA *gtf_data, char *key, int ignore_undef) {
 	    	break;
 	    }
 	if (i == (nb_column - 1)) {
-		//fprintf(stderr, "Indexing data on %s ", key);
 		index_id = index_gtf(gtf_data, key);
-		//fprintf(stderr, "OK\n");
 		twalk(column[index_id->column]->index[index_id->index_rank]->data, action);
 	}
 
 	i = 0;
 	type = UNSET;
-	//fprintf(stderr, "BEFORE LOOP : vret->size = %d\n", vret->size);
 	while (i < vret->size) {
-		//fprintf(stderr, "BEGIN LOOP : type = %d\n", type);
-		if (type == UNSET)
+		if (type == UNSET) {
 			type = atoi(vret->data[i][2]);
+			if (type == IRREGULAR) break;
+		}
 		else {
 			type2 = atoi(vret->data[i][2]);
-			if (ignore_undef) {
+			if (type2 == IRREGULAR) {
+				type = IRREGULAR;
+				break;
+			}
+			else if (ignore_undef) {
 				if (type2 > 0) {
 					if (type > 0 && type != type2) {
 						type = UNCONSISTENT;
@@ -137,7 +139,6 @@ int get_type(GTF_DATA *gtf_data, char *key, int ignore_undef) {
 					type = type2;
 			}
 		}
-		//fprintf(stderr, "END LOOP : type = %d\n", type);
 		i++;
 	}
 	return type;
