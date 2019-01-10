@@ -55,10 +55,9 @@ GTF_DATA *del_attributes(GTF_DATA *gtf_data, char *features, char *keys) {
 			pattr_end = pattr + row->attributes.nb;
 			while (pattr != pattr_end) {
 				if (strstr(keys, pattr->key)) {
-					if (pattr + 1 != pattr_end) {
+					if (pattr + 1 != pattr_end)
 						bcopy(pattr + 1, pattr, (pattr_end - pattr - 1) * sizeof(ATTRIBUTE));
-						row->attributes.nb--;
-					}
+					row->attributes.nb--;
 					pattr_end--;
 				}
 				else
