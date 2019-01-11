@@ -427,5 +427,6 @@ GTF_DATA *add_attr_to_pos(GTF_DATA *gtf_data, char *inputfile_name, char *new_ke
 void clear_indexes(void);
 GTF_DATA *add_attr_column(GTF_DATA *gtf_data, char *inputfile_name, char *new_key);
 int int_array_test(int *pos, int size);
+void *print_bed(GTF_DATA *gtf_data, char *output, int add_chr, char *keys, char *sep, char *more_info);
 
 #endif /* GTFTOOLKIT_GTFTK_SRC_LIB_LIBGTFTK_H_ */
