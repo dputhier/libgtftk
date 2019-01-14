@@ -69,9 +69,8 @@ void print_attributes(GTF_ROW *row, FILE *output) {
 }
 
 int get_column_rank(char *name) {
-	STRING_TO_INT_HASH *c = (STRING_TO_INT_HASH *)calloc(1, sizeof(STRING_TO_INT_HASH));
-	c->key = name;
-	STRING_TO_INT_HASH **cf = tfind(c, &column_rank, compare_column_name);
+	STRING_TO_INT_HASH c = {name, 0};
+	STRING_TO_INT_HASH **cf = tfind(&c, &column_rank, compare_column_name);
 	if (cf) return (*cf)->value;
 	return -1;
 }
