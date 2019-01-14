@@ -112,7 +112,6 @@ typedef struct TEXTFILE_READER {
  */
 typedef struct ATTRIBUTE {
 	char *key, *value;
-//	struct ATTRIBUTE *next;
 } ATTRIBUTE;
 
 /*
@@ -249,6 +248,11 @@ typedef struct COLUMN {
 	 */
 	int nb_index;
 } COLUMN ;
+
+typedef struct STRING_TO_INT_HASH {
+	char *key;
+	int value;
+} STRING_TO_INT_HASH;
 
 /*
  * A list of row numbers associated with a token (the values in the 8 first

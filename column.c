@@ -24,7 +24,13 @@ extern char *get_attribute_value(GTF_ROW *row, char *attr);
  */
 extern int nb_column;
 extern COLUMN **column;
-extern struct hsearch_data *column_rank;
+extern void *column_rank;
+
+int compare_column_name(const void *p1, const void *p2) {
+	STRING_TO_INT_HASH *c1 = (STRING_TO_INT_HASH *)p1;
+	STRING_TO_INT_HASH *c2 = (STRING_TO_INT_HASH *)p2;
+	return strcmp(c1->key, c2->key);
+}
 
 /*
  * prints a column value (a feature, a start ...) with delimiter.
@@ -63,9 +69,10 @@ void print_attributes(GTF_ROW *row, FILE *output) {
 }
 
 int get_column_rank(char *name) {
-	ENTRY e = {name, 0}, *ep;
-	hsearch_r(e, FIND, &ep, column_rank);
-	if (ep) return (int)(ep->data);
+	STRING_TO_INT_HASH *c = (STRING_TO_INT_HASH *)calloc(1, sizeof(STRING_TO_INT_HASH));
+	c->key = name;
+	STRING_TO_INT_HASH **cf = tfind(c, &column_rank, compare_column_name);
+	if (cf) return (*cf)->value;
 	return -1;
 }
 
@@ -167,16 +174,16 @@ void index_row(int row_nb, char *value, INDEX *index) {
  * Returns:		the initialized COLUMN structure
  */
 COLUMN *make_column(int i, void *dv, char *name) {
-	ENTRY e, *ep;
 	COLUMN *column = (COLUMN *)calloc(1, sizeof(COLUMN));
+	STRING_TO_INT_HASH *h = (STRING_TO_INT_HASH *)calloc(1, sizeof(STRING_TO_INT_HASH));
 	column->num = i;
 	column->name = strdup(name);
 	column->index = NULL;
 	column->nb_index = 0;
 	if (dv != NULL) column->default_value = strdup((char *)dv);
-	e.key = column->name;
-	e.data = (void *)i;
-	hsearch_r(e, ENTER, &ep, column_rank);
+	h->key = column->name;
+	h->value = column->num;
+	tsearch(h, &column_rank, compare_column_name);
 	return column;
 }
 
@@ -186,8 +193,6 @@ COLUMN *make_column(int i, void *dv, char *name) {
 void make_columns(void) {
 	nb_column = 9;
 	if (column == NULL) {
-		column_rank = (struct hsearch_data *)calloc(1, sizeof(struct hsearch_data));
-		hcreate_r(9, column_rank);
 		column = (COLUMN **)calloc(nb_column, sizeof(COLUMN *));
 		column[0] = make_column(0, ".", "seqid");
 		column[1] = make_column(1, ".", "source");
